@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: '/Little-Alchemist-Deck-Optimizer/',
+    base: '/Little-Alchemist-Helper/',
     root: 'app',
     build: {
         outDir: '../dist',
