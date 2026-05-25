@@ -67,6 +67,25 @@ self.onmessage = function (e) {
             } else if (job === 'try_all') {
                 result = tryAllCards(comboDict, library, targetSize, settings,
                                      progressCb, cancelledCb);
+            } else if (job === 'best_possible') {
+                // Thorough optimize: best deck across all start cards, then
+                // hill-climb to a local optimum, then a simulated-annealing
+                // polish to escape it. Not provably optimal, but explores far
+                // more than any single fill.
+                progressCb(5, 100, 'trying all start cards');
+                const all = tryAllCards(comboDict, library, targetSize, settings, null, cancelledCb);
+                let best = (all && all.length) ? all[0].deck.slice() : [];
+                if (best.length && !cancelledCb()) {
+                    progressCb(50, 100, 'hill-climbing');
+                    best = hillClimb(comboDict, library, best, settings, null, cancelledCb);
+                }
+                if (best.length && !cancelledCb()) {
+                    progressCb(75, 100, 'annealing polish');
+                    best = simulatedAnnealing(comboDict, library, best, settings,
+                                              8000, 0.0, 0.997, null, cancelledCb);
+                }
+                progressCb(100, 100, 'done');
+                result = best;
             } else {
                 throw new Error(`Unknown job type: ${job}`);
             }

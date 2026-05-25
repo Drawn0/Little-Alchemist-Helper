@@ -421,6 +421,7 @@ function _bindEvents() {
     document.getElementById('btn-complete-deck').addEventListener('click', () => _runAlgorithm('complete'));
     document.getElementById('btn-advanced-fill').addEventListener('click', () => _runAlgorithm('advanced'));
     document.getElementById('btn-try-all').addEventListener('click', () => _runAlgorithm('try_all'));
+    document.getElementById('btn-best-possible').addEventListener('click', () => _runAlgorithm('best'));
     document.getElementById('btn-to-leaderboard').addEventListener('click', _copyToLeaderboard);
     document.getElementById('btn-export-deck').addEventListener('click', _exportDeck);
     document.getElementById('btn-clear-deck').addEventListener('click', () => {
@@ -1682,23 +1683,27 @@ function _runAlgorithm(job) {
         }
     }
 
-    // 'fill' → greedy seeded completion; 'complete' → seeded + optimize remaining.
-    const realJob = job === 'fill' ? 'fill_seed' : (job === 'complete' ? 'complete_seed' : job);
+    // 'fill' → greedy seeded completion; 'complete' → seeded + optimize remaining;
+    // 'best' → thorough optimize from scratch across all start cards.
+    const realJob = job === 'fill' ? 'fill_seed'
+        : (job === 'complete' ? 'complete_seed'
+        : (job === 'best' ? 'best_possible' : job));
 
     const label = {
         fill:     '⚡ Completing deck…',
         complete: '🎯 Finding best completion…',
         advanced: '🧠 Running advanced fill…',
         try_all:  '🔁 Trying all start cards…',
+        best:     '🏆 Finding best possible deck…',
     }[job] || 'Running…';
 
     setStatus(label);
     setProgress(0);
     _setWorkerBusy(true);
 
-    // Advanced fill rebuilds from a single start card, so clear first.
-    // Seeded fill (job==='fill') keeps the current deck.
-    if (job === 'advanced') {
+    // Advanced fill and Best Possible rebuild from scratch, so clear first.
+    // Seeded fill (job==='fill'/'complete') keeps the current deck.
+    if (job === 'advanced' || job === 'best') {
         STATE.deck = [];
         refreshDeck();
     }
