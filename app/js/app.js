@@ -8,6 +8,21 @@ import {
     fillDeck, advancedFill, buildKeyLookup, defaultSettings,
 } from './engine.js';
 import comboData from '../combo_data.json';
+import { loadCardData, hasCard } from './util/card_data.js';
+import { showToast } from './util/toast.js';
+import { recordUndo } from './util/undo.js';
+import { createLibraryRow } from './components/library_row.js';
+import { createLibrarySearch } from './components/library_search.js';
+import { createCardThumbnail } from './components/card_thumbnail.js';
+
+// Phase 2: in-session memory for "Recently Added" section (newest first).
+const _recentlyAdded = [];
+function _pushRecent(name) {
+    const idx = _recentlyAdded.indexOf(name);
+    if (idx >= 0) _recentlyAdded.splice(idx, 1);
+    _recentlyAdded.unshift(name);
+    if (_recentlyAdded.length > 10) _recentlyAdded.length = 10;
+}
 
 // ── State ────────────────────────────────────────────────────────────────────
 const STATE = {
@@ -158,12 +173,18 @@ function _bindEvents() {
         _loadFromStorage();
     });
 
-    // ── Library ───────────────────────────────────────────────────────────────
-    document.getElementById('lib-search').addEventListener('input', refreshLibrary);
-    document.getElementById('btn-lib-add').addEventListener('click', _addCard);
-    document.getElementById('btn-lib-edit').addEventListener('click', _editCard);
-    document.getElementById('btn-lib-remove').addEventListener('click', _removeCard);
+    // ── Library (Phase 2: search-to-add + inline-edit rows) ────────────────────
     document.getElementById('btn-lib-to-deck').addEventListener('click', _addSelectedToDeck);
+    document.getElementById('btn-lib-add-pack').addEventListener('click', () => {
+        showToast('Pack picker coming in Checkpoint C');
+    });
+    // Outside-click collapses any expanded row
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.lib-row')) return;
+        document.querySelectorAll('.lib-row--expanded').forEach((row) => {
+            if (typeof row.collapse === 'function') row.collapse();
+        });
+    });
     document.getElementById('btn-save-library').addEventListener('click', _saveLibraryToStorage);
     document.getElementById('btn-export-library').addEventListener('click', _exportLibrary);
     document.getElementById('btn-import-library').addEventListener('click', () => {
@@ -374,7 +395,7 @@ function _onLibFileChosen(e) {
     reader.readAsText(file);
 }
 
-function _enterApp() {
+async function _enterApp() {
     // On first launch (no saved library) seed with all Common + Uncommon cards
     if (STATE.library.length === 0) {
         const SEED_RARITIES = new Set(['Common', 'Uncommon']);
@@ -387,8 +408,80 @@ function _enterApp() {
         try { localStorage.setItem('la_library', JSON.stringify(STATE.library)); } catch { /* ignore */ }
     }
     _resolveIds();
+    // Phase 2: load enriched card metadata before first paint so thumbnails
+    // and the search index are ready.
+    await loadCardData();
+    _initLibraryUI();
     _refreshAll();
     setStatus('Loaded ' + Object.keys(STATE.comboDict).length.toLocaleString() + ' combinations  |  ' + STATE.library.length + ' cards in library');
+}
+
+// ── Phase 2 library UI wiring ────────────────────────────────────────────────
+let _librarySearchReady = false;
+function _initLibraryUI() {
+    if (_librarySearchReady) return;
+    _librarySearchReady = true;
+    createLibrarySearch({
+        input: document.getElementById('lib-search'),
+        resultsHost: document.getElementById('lib-search-results'),
+        getOwnedCount: (name) => STATE.library.filter((c) => c.name === name).reduce((n, c) => n + c.quantity, 0),
+        onPick: _addOrIncrementFromSearch,
+    });
+}
+
+function _libIndexOfKey(key) {
+    return STATE.library.findIndex((c) => `${c.name}|${c.fused ? 1 : 0}|${c.onyx ? 1 : 0}` === key);
+}
+
+function _findEntry(name, { fused = false, onyx = false } = {}) {
+    return STATE.library.find((c) => c.name === name && !!c.fused === fused && !!c.onyx === onyx);
+}
+
+function _persistLibrary() {
+    try { localStorage.setItem('la_library', JSON.stringify(STATE.library)); } catch { /* ignore */ }
+}
+
+function _addOrIncrementFromSearch(name) {
+    if (!hasCard(name) && !STATE.comboNameToId[name] && !STATE.nameToId[name]) {
+        showToast(`Unknown card: ${name}`);
+        return;
+    }
+    const existing = _findEntry(name, { fused: false, onyx: false });
+    if (existing) {
+        const prevQty = existing.quantity;
+        existing.quantity = prevQty + 1;
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+        showToast(`${name}: ×${existing.quantity}`);
+        recordUndo(`+1 ${name}`, () => {
+            const e = _findEntry(name, { fused: false, onyx: false });
+            if (!e) return;
+            e.quantity = prevQty;
+            _persistLibrary();
+            _refreshAfterLibraryMutation();
+        });
+    } else {
+        const id = STATE.comboNameToId[name] || STATE.nameToId[name] || 0;
+        const newCard = { name, level: 1, fused: false, onyx: false, quantity: 1, id };
+        STATE.library.push(newCard);
+        STATE.library.sort((a, b) => a.name.localeCompare(b.name));
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+        showToast(`Added ${name}`);
+        recordUndo(`Add ${name}`, () => {
+            const idx = STATE.library.indexOf(newCard);
+            if (idx >= 0) STATE.library.splice(idx, 1);
+            _persistLibrary();
+            _refreshAfterLibraryMutation();
+        });
+    }
+    _pushRecent(name);
+}
+
+function _refreshAfterLibraryMutation() {
+    refreshLibrary();
+    refreshSuggestions();
+    refreshScore();
 }
 
 function _resolveIds() {
@@ -416,59 +509,134 @@ function _refreshAll() {
 // ── Library refresh ───────────────────────────────────────────────────────────
 
 function refreshLibrary() {
-    const q = document.getElementById('lib-search').value.trim().toLowerCase();
-    let rows = STATE.library.slice();
+    const list = document.getElementById('lib-list');
+    if (!list) return;
+    list.innerHTML = '';
 
-    if (q) rows = rows.filter(c => c.name.toLowerCase().includes(q));
-
-    // Sort
-    const _rarityOrder = { 'Common': 0, 'Uncommon': 1, 'Rare': 2, 'Onyx': 3 };
-    rows.sort((a, b) => {
-        let va, vb;
-        if (_libSortCol === 'rarity') {
-            va = _rarityOrder[(STATE.cardInfo[a.name] || {}).rare] ?? -1;
-            vb = _rarityOrder[(STATE.cardInfo[b.name] || {}).rare] ?? -1;
-        } else {
-            va = a[_libSortCol]; vb = b[_libSortCol];
-            if (typeof va === 'string') va = va.toLowerCase();
-            if (typeof vb === 'string') vb = vb.toLowerCase();
+    // Recently Added section — only when there's any in-session add history
+    if (_recentlyAdded.length > 0) {
+        const title = document.createElement('div');
+        title.className = 'lib-section-title';
+        title.textContent = 'Recently added';
+        list.appendChild(title);
+        for (const name of _recentlyAdded) {
+            list.appendChild(_makeRecentRow(name));
         }
-        if (va < vb) return _libSortAsc ? -1 : 1;
-        if (va > vb) return _libSortAsc ? 1 : -1;
-        // Secondary sort: always alphabetical by name within a group
-        return a.name.localeCompare(b.name);
-    });
-
-    // Update header indicators
-    document.querySelectorAll('#lib-table thead th').forEach(th => {
-        th.classList.remove('sort-asc', 'sort-desc');
-        if (th.dataset.col === _libSortCol) {
-            th.classList.add(_libSortAsc ? 'sort-asc' : 'sort-desc');
-        }
-    });
-
-    const tbody = document.getElementById('lib-tbody');
-    tbody.innerHTML = '';
-    for (const card of rows) {
-        const tr = document.createElement('tr');
-        tr.dataset.name = card.name;
-        if (_cardKey(card) === _libSelectedKey) tr.classList.add('selected');
-        tr.innerHTML = `
-            <td title="${esc(_dispName(card))}">${card.fused ? '<img src="assets/Orb.png" class="orb-icon" alt="fused" title="Fused">' : ''
-            }${esc(_dispName(card))}</td>
-            <td class="center">${_rarityImg(card)}</td>
-            <td class="center">${card.level}</td>
-            <td class="center">${card.fused ? '✓' : '–'}</td>
-            <td class="center">${card.onyx  ? '✓' : '–'}</td>
-            <td class="center">${card.quantity}</td>
-        `;
-        tr.addEventListener('click', () => {
-            document.querySelectorAll('#lib-tbody tr').forEach(r => r.classList.remove('selected'));
-            tr.classList.add('selected');
-            _libSelectedKey = _cardKey(card);
-        });
-        tbody.appendChild(tr);
+        const allTitle = document.createElement('div');
+        allTitle.className = 'lib-section-title';
+        allTitle.textContent = `All cards (${STATE.library.length})`;
+        list.appendChild(allTitle);
     }
+
+    const rows = STATE.library.slice().sort((a, b) => a.name.localeCompare(b.name));
+    for (const card of rows) {
+        list.appendChild(_makeLibraryRow(card));
+    }
+}
+
+function _makeLibraryRow(card) {
+    return createLibraryRow(card, {
+        onChangeLevel: (v) => {
+            const prev = card.level;
+            card.level = v;
+            _persistLibrary();
+            refreshSuggestions(); refreshScore();
+            showToast(`${card.name}: Lv ${v}`);
+            recordUndo(`Level ${card.name} → ${prev}`, () => {
+                const ref = _findEntry(card.name, { fused: card.fused, onyx: card.onyx });
+                if (!ref) return;
+                ref.level = prev;
+                _persistLibrary(); refreshLibrary(); refreshSuggestions(); refreshScore();
+            });
+        },
+        onChangeFused: (v) => _toggleFlagSafely(card, 'fused', v),
+        onChangeOnyx:  (v) => _toggleFlagSafely(card, 'onyx', v),
+        onChangeQty: (v) => {
+            const prev = card.quantity;
+            card.quantity = v;
+            _persistLibrary();
+            refreshSuggestions(); refreshScore();
+            recordUndo(`Qty ${card.name} → ${prev}`, () => {
+                const ref = _findEntry(card.name, { fused: card.fused, onyx: card.onyx });
+                if (!ref) return;
+                ref.quantity = prev;
+                _persistLibrary(); refreshLibrary(); refreshSuggestions(); refreshScore();
+            });
+        },
+        onDelete: () => {
+            const idx = STATE.library.indexOf(card);
+            if (idx < 0) return;
+            const removed = STATE.library.splice(idx, 1)[0];
+            _persistLibrary();
+            _refreshAfterLibraryMutation();
+            showToast(`Removed ${card.name}`);
+            recordUndo(`Remove ${card.name}`, () => {
+                STATE.library.splice(idx, 0, removed);
+                _persistLibrary(); _refreshAfterLibraryMutation();
+            });
+        },
+    });
+}
+
+function _toggleFlagSafely(card, flag, value) {
+    const target = { fused: card.fused, onyx: card.onyx };
+    target[flag] = value;
+    const collision = STATE.library.find((c) => c !== card && c.name === card.name && !!c.fused === target.fused && !!c.onyx === target.onyx);
+    if (collision) {
+        // Merge: fold this row's quantity into the collision entry and remove this row.
+        const prevQty = collision.quantity;
+        const myIdx = STATE.library.indexOf(card);
+        collision.quantity += card.quantity;
+        STATE.library.splice(myIdx, 1);
+        _persistLibrary(); _refreshAfterLibraryMutation();
+        showToast(`Merged into existing ${card.name}`);
+        recordUndo(`Un-merge ${card.name}`, () => {
+            collision.quantity = prevQty;
+            STATE.library.splice(myIdx, 0, { ...card });
+            _persistLibrary(); _refreshAfterLibraryMutation();
+        });
+        return;
+    }
+    const prev = card[flag];
+    card[flag] = value;
+    _persistLibrary(); _refreshAfterLibraryMutation();
+    showToast(`${card.name}: ${flag} ${value ? 'on' : 'off'}`);
+    recordUndo(`${flag} ${card.name} → ${prev ? 'on' : 'off'}`, () => {
+        const ref = STATE.library.find((c) => c.name === card.name && c.quantity === card.quantity);
+        if (!ref) return;
+        ref[flag] = prev;
+        _persistLibrary(); _refreshAfterLibraryMutation();
+    });
+}
+
+function _makeRecentRow(name) {
+    const row = document.createElement('div');
+    row.className = 'lib-row lib-row--compact';
+    const main = document.createElement('div');
+    main.className = 'lib-row__main';
+    const labelBtn = document.createElement('button');
+    labelBtn.type = 'button';
+    labelBtn.className = 'lib-row__name-area';
+    labelBtn.appendChild(createCardThumbnail({ name, size: 36 }));
+    const txt = document.createElement('span');
+    txt.className = 'lib-row__name-text';
+    txt.textContent = name;
+    labelBtn.appendChild(txt);
+    main.appendChild(labelBtn);
+
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'qty-ctrl__btn qty-ctrl__btn--plus';
+    plus.textContent = '+1';
+    plus.setAttribute('aria-label', `Add another ${name}`);
+    plus.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _addOrIncrementFromSearch(name);
+    });
+    main.appendChild(plus);
+
+    row.appendChild(main);
+    return row;
 }
 
 // ── Deck refresh ──────────────────────────────────────────────────────────────
