@@ -28,6 +28,40 @@ function _pushRecent(name) {
     if (_recentlyAdded.length > 10) _recentlyAdded.length = 10;
 }
 
+// ── Phase 2: panel layout state (persisted) ──────────────────────────────────
+const PANEL_LAYOUT = {
+    max: null,                     // 'library' | 'deck' | 'suggestions' | null
+    collapsed: new Set(),          // subset of those names
+};
+function _loadPanelLayout() {
+    try {
+        const raw = localStorage.getItem('la_panel_layout');
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        if (typeof p.max === 'string' || p.max === null) PANEL_LAYOUT.max = p.max;
+        if (Array.isArray(p.collapsed)) PANEL_LAYOUT.collapsed = new Set(p.collapsed);
+    } catch { /* ignore */ }
+}
+function _savePanelLayout() {
+    try {
+        localStorage.setItem('la_panel_layout', JSON.stringify({
+            max: PANEL_LAYOUT.max,
+            collapsed: [...PANEL_LAYOUT.collapsed],
+        }));
+    } catch { /* ignore */ }
+}
+function _applyPanelLayout() {
+    const mc = document.getElementById('main-content');
+    if (!mc) return;
+    mc.dataset.maxPanel = PANEL_LAYOUT.max || '';
+    document.querySelectorAll('#main-content > .panel').forEach((p) => {
+        const name = p.dataset.panel;
+        p.classList.toggle('panel--collapsed', PANEL_LAYOUT.collapsed.has(name));
+        p.classList.toggle('panel--maximized', PANEL_LAYOUT.max === name);
+        p.classList.toggle('panel--hidden-by-max', PANEL_LAYOUT.max && PANEL_LAYOUT.max !== name);
+    });
+}
+
 // ── Phase 2A: filter + sort state (persisted) ────────────────────────────────
 const RARITIES = ['Bronze', 'Silver', 'Gold', 'Diamond', 'Onyx'];
 const RARITY_RANK = { Bronze: 0, Silver: 1, Gold: 2, Diamond: 3, Onyx: 4 };
@@ -292,6 +326,30 @@ function _bindEvents() {
             onComplete: (r) => showToast(`Imported: +${r.added} new, ${r.merged} merged, ${r.skipped} skipped`),
         });
     });
+    // ── Panel layout controls (maximize / collapse per panel) ─────────────────
+    _loadPanelLayout();
+    _applyPanelLayout();
+    document.querySelectorAll('.panel-ctrl').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const panel = btn.closest('.panel').dataset.panel;
+            const action = btn.dataset.action;
+            if (action === 'max') {
+                PANEL_LAYOUT.max = (PANEL_LAYOUT.max === panel) ? null : panel;
+                // Maximizing implies expanding (un-collapse)
+                if (PANEL_LAYOUT.max === panel) PANEL_LAYOUT.collapsed.delete(panel);
+            } else if (action === 'collapse') {
+                if (PANEL_LAYOUT.collapsed.has(panel)) PANEL_LAYOUT.collapsed.delete(panel);
+                else PANEL_LAYOUT.collapsed.add(panel);
+                // If this is the maximized panel, collapsing it cancels max
+                if (PANEL_LAYOUT.max === panel && PANEL_LAYOUT.collapsed.has(panel)) {
+                    PANEL_LAYOUT.max = null;
+                }
+            }
+            _savePanelLayout();
+            _applyPanelLayout();
+        });
+    });
+
     // Outside-click collapses any expanded row
     document.addEventListener('click', (e) => {
         if (e.target.closest('.lib-row')) return;

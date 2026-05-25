@@ -153,7 +153,7 @@ html, body {
     align-items: center;
 }
 
-/* ── Main content area (3 columns) ──────────────────────── */
+/* ── Main content area (3 columns, responsive to panel layout) ─────────── */
 #main-content {
     display: grid;
     grid-template-columns: 1fr 1fr 1.2fr;
@@ -162,6 +162,58 @@ html, body {
     overflow: hidden;
     min-height: 0;
 }
+/* When a panel is collapsed, its column shrinks to ~36px. */
+#main-content > .panel--collapsed { min-width: 0; }
+#main-content:not([data-max-panel]):has(#library-panel.panel--collapsed),
+#main-content[data-max-panel=""]:has(#library-panel.panel--collapsed) {
+    grid-template-columns: 36px 1fr 1.2fr;
+}
+#main-content[data-max-panel=""]:has(#deck-panel.panel--collapsed) {
+    grid-template-columns: 1fr 36px 1.2fr;
+}
+#main-content[data-max-panel=""]:has(#suggestions-panel.panel--collapsed) {
+    grid-template-columns: 1fr 1fr 36px;
+}
+#main-content[data-max-panel=""]:has(#library-panel.panel--collapsed):has(#deck-panel.panel--collapsed) {
+    grid-template-columns: 36px 36px 1fr;
+}
+#main-content[data-max-panel=""]:has(#library-panel.panel--collapsed):has(#suggestions-panel.panel--collapsed) {
+    grid-template-columns: 36px 1fr 36px;
+}
+#main-content[data-max-panel=""]:has(#deck-panel.panel--collapsed):has(#suggestions-panel.panel--collapsed) {
+    grid-template-columns: 1fr 36px 36px;
+}
+/* When a panel is maximized, it takes the full row; others hide. */
+#main-content[data-max-panel] {
+    grid-template-columns: 1fr;
+}
+.panel--hidden-by-max { display: none !important; }
+
+/* Collapsed panel: just show the title vertically; hide the rest. */
+.panel--collapsed > *:not(.panel-header) { display: none; }
+.panel--collapsed .panel-header {
+    flex-direction: column;
+    padding: 8px 4px;
+    height: 100%;
+    border-bottom: 0;
+    cursor: pointer;
+}
+.panel--collapsed .panel-title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 13px;
+    margin-top: 4px;
+}
+.panel--collapsed .panel-count,
+.panel--collapsed .panel-controls .panel-ctrl--max { display: none; }
+.panel--collapsed .panel-controls .panel-ctrl--collapse::before {
+    content: '+';
+}
+.panel--collapsed .panel-controls .panel-ctrl--collapse {
+    font-size: 16px;
+    line-height: 1;
+}
+.panel--collapsed .panel-controls .panel-ctrl--collapse > * { display: none; }
 
 /* ── Panels ──────────────────────────────────────────────── */
 .panel {
@@ -200,6 +252,29 @@ html, body {
     width: 120px;
     font-size: 12px;
 }
+.panel-controls {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: auto;
+}
+.panel-ctrl {
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--fg2);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+}
+.panel-ctrl:hover {
+    background: var(--bg2);
+    color: var(--fg);
+    border-color: var(--border);
+}
+.panel--maximized .panel-ctrl--max { color: var(--accent); }
 
 /* ── Tables ──────────────────────────────────────────────── */
 .table-wrap {

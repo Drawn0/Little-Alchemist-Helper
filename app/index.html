@@ -34,9 +34,13 @@
     <div id="main-content">
 
         <!-- ── Library panel ──────────────────────────────────────────────── -->
-        <section class="panel" id="library-panel">
+        <section class="panel" id="library-panel" data-panel="library">
             <div class="panel-header">
                 <span class="panel-title">📚 Library</span>
+                <span class="panel-controls">
+                    <button class="panel-ctrl panel-ctrl--max" data-action="max" title="Maximize / restore">⛶</button>
+                    <button class="panel-ctrl panel-ctrl--collapse" data-action="collapse" title="Collapse / expand">–</button>
+                </span>
             </div>
             <div class="lib-toolbar">
                 <div class="lib-search-wrap">
@@ -77,10 +81,14 @@
         </section>
 
         <!-- ── Deck panel ────────────────────────────────────────────────── -->
-        <section class="panel" id="deck-panel">
+        <section class="panel" id="deck-panel" data-panel="deck">
             <div class="panel-header">
                 <span class="panel-title">🃏 Deck</span>
                 <span class="panel-count" id="deck-count">(0 cards)</span>
+                <span class="panel-controls">
+                    <button class="panel-ctrl panel-ctrl--max" data-action="max" title="Maximize / restore">⛶</button>
+                    <button class="panel-ctrl panel-ctrl--collapse" data-action="collapse" title="Collapse / expand">–</button>
+                </span>
             </div>
 
             <!-- Start card row -->
@@ -122,10 +130,14 @@
         </section>
 
         <!-- ── Suggestions panel ─────────────────────────────────────────── -->
-        <section class="panel" id="suggestions-panel">
+        <section class="panel" id="suggestions-panel" data-panel="suggestions">
             <div class="panel-header">
                 <span class="panel-title">💡 Suggestions</span>
                 <button id="btn-add-best" class="accent" style="font-size:11px;padding:2px 8px;">→ Add Best</button>
+                <span class="panel-controls">
+                    <button class="panel-ctrl panel-ctrl--max" data-action="max" title="Maximize / restore">⛶</button>
+                    <button class="panel-ctrl panel-ctrl--collapse" data-action="collapse" title="Collapse / expand">–</button>
+                </span>
             </div>
             <div class="table-wrap" id="sug-table-wrap">
                 <table id="sug-table">
