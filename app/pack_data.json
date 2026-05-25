@@ -70,29 +70,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 91,
-    "name": "Anniversary",
-    "price": 250,
-    "cards": [
-      "Sweets (Onyx)",
-      "Celebration",
-      "Alchemical Graduate",
-      "Everything is Cake",
-      "Mecha Chinzilla",
-      "Mr. Pimm's Wild Ride",
-      "Party Animal Albert",
-      "Puffin' Leopold",
-      "Vamping Vera",
-      "Anna-versary",
-      "Ella-gant Ball",
-      "Moshing Miles",
-      "Rampant Lucy",
-      "Sniping Queen",
-      "Xanthar the Exultant"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 65,
     "name": "Aquatic",
     "price": 72,
@@ -208,52 +185,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 119,
-    "name": "Atomic Aftermath",
-    "price": 0,
-    "cards": [
-      "Apocalypse (Onyx)",
-      "Atomic Aftermath",
-      "Atomic Burrito",
-      "Deathmaw",
-      "IrRAIDiators",
-      "Main Character Mutt",
-      "Metallic Fraternity",
-      "Nuclear Wintertide",
-      "Utopia",
-      "Cherished Collectibles",
-      "Ghouls and Dolls",
-      "King of the Heap",
-      "Mystifying Mutations",
-      "Over Stimulated",
-      "Unsettling Settlers"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 122,
-    "name": "Atomic Aftermath",
-    "price": 0,
-    "cards": [
-      "Apocalypse (Onyx)",
-      "Atomic Aftermath",
-      "Atomic Burrito",
-      "Deathmaw",
-      "IrRAIDiators",
-      "Main Character Mutt",
-      "Metallic Fraternity",
-      "Nuclear Wintertide",
-      "Utopia",
-      "Cherished Collectibles",
-      "Ghouls and Dolls",
-      "King of the Heap",
-      "Mystifying Mutations",
-      "Over Stimulated",
-      "Unsettling Settlers"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 24,
     "name": "Aviary",
     "price": 50,
@@ -301,30 +232,7 @@
   },
   {
     "id": 81,
-    "name": "Bloody",
-    "price": 50,
-    "cards": [
-      "Energy (Onyx)",
-      "Blood",
-      "Blood Angel",
-      "Blood Bath",
-      "Blood Bros",
-      "Blood Mage",
-      "Bloody Mary",
-      "Bloody Prom Queen",
-      "Fireblood Dragon",
-      "Blood Analyst",
-      "Blood Imp",
-      "Bloodlust",
-      "Mana Elf",
-      "Sekhmet",
-      "Vampire Queen"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 86,
-    "name": "Bloody",
+    "name": "Bloody (2)",
     "price": 50,
     "cards": [
       "Energy (Onyx)",
@@ -553,52 +461,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 80,
-    "name": "Combat",
-    "price": 50,
-    "cards": [
-      "Villain (Onyx)",
-      "War",
-      "Medic",
-      "War Bear",
-      "Amazon",
-      "Sniper",
-      "Terracotta Army",
-      "Gas Mask Soldier",
-      "Ghost Army",
-      "Messenger Bird",
-      "Wolf Battering Ram",
-      "War Turtle",
-      "Ares",
-      "Flower Power",
-      "Winter Assassin"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 89,
-    "name": "Combat",
-    "price": 50,
-    "cards": [
-      "Villain (Onyx)",
-      "War",
-      "Medic",
-      "War Bear",
-      "Amazon",
-      "Sniper",
-      "Terracotta Army",
-      "Gas Mask Soldier",
-      "Ghost Army",
-      "Messenger Bird",
-      "Wolf Battering Ram",
-      "War Turtle",
-      "Ares",
-      "Flower Power",
-      "Winter Assassin"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 2,
     "name": "Comic Book",
     "price": 40,
@@ -755,101 +617,9 @@
     "onyx_fragments": false
   },
   {
-    "id": 115,
-    "name": "Fantasy",
-    "price": 0,
-    "cards": [
-      "Fairy Tale (Onyx)",
-      "Precious Ring Lore",
-      "Lord of Horses",
-      "Fiery Shadow Demon",
-      "Forest Chinchillas",
-      "Treacherous Wizard",
-      "The Ranger",
-      "Celestial Trees",
-      "Shapeshifting Chief",
-      "Shattered Sword",
-      "Goblin Hybrid",
-      "Vial of Stars",
-      "Elven Power Elixir",
-      "Tentacled Beast",
-      "Wraith Dagger"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 121,
-    "name": "Fantasy",
-    "price": 0,
-    "cards": [
-      "Fairy Tale (Onyx)",
-      "Precious Ring Lore",
-      "Lord of Horses",
-      "Fiery Shadow Demon",
-      "Forest Chinchillas",
-      "Treacherous Wizard",
-      "The Ranger",
-      "Celestial Trees",
-      "Shapeshifting Chief",
-      "Shattered Sword",
-      "Goblin Hybrid",
-      "Vial of Stars",
-      "Elven Power Elixir",
-      "Tentacled Beast",
-      "Wraith Dagger"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 124,
-    "name": "Fantasy",
-    "price": 0,
-    "cards": [
-      "Fairy Tale (Onyx)",
-      "Precious Ring Lore",
-      "Lord of Horses",
-      "Fiery Shadow Demon",
-      "Forest Chinchillas",
-      "Treacherous Wizard",
-      "The Ranger",
-      "Celestial Trees",
-      "Shapeshifting Chief",
-      "Shattered Sword",
-      "Goblin Hybrid",
-      "Vial of Stars",
-      "Elven Power Elixir",
-      "Tentacled Beast",
-      "Wraith Dagger"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 51,
     "name": "Far Away",
     "price": 72,
-    "cards": [
-      "Space (Onyx)",
-      "Galaxy Wars",
-      "Centennial Eagle",
-      "Dark Sage Master",
-      "Dark Apprentice",
-      "Space Ghosts",
-      "Aquatic Alien",
-      "W Space Fighter",
-      "Bounty Hunter Clone",
-      "Carnivorous Pit",
-      "Laughing Pet Alien",
-      "Cryo Smuggler",
-      "Nanopower",
-      "Blue Fizz Refresher",
-      "Lizard Bounty Hunter"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 109,
-    "name": "Far Away",
-    "price": 0,
     "cards": [
       "Space (Onyx)",
       "Galaxy Wars",
@@ -940,52 +710,6 @@
   },
   {
     "id": 6,
-    "name": "Fun",
-    "price": 50,
-    "cards": [
-      "Bear (Onyx)",
-      "Toy",
-      "Action Figure",
-      "Chemistry Set",
-      "Doll",
-      "EZ Cake Oven",
-      "My Mini Horse",
-      "Squirt Gun",
-      "Video Game",
-      "Building Blocks",
-      "Kite",
-      "Princess",
-      "Rainbow Girl",
-      "Snakes in a Can",
-      "Stuffed Plushie"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 82,
-    "name": "Fun",
-    "price": 50,
-    "cards": [
-      "Bear (Onyx)",
-      "Toy",
-      "Action Figure",
-      "Chemistry Set",
-      "Doll",
-      "EZ Cake Oven",
-      "My Mini Horse",
-      "Squirt Gun",
-      "Video Game",
-      "Building Blocks",
-      "Kite",
-      "Princess",
-      "Rainbow Girl",
-      "Snakes in a Can",
-      "Stuffed Plushie"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 87,
     "name": "Fun",
     "price": 50,
     "cards": [
@@ -1123,7 +847,7 @@
   },
   {
     "id": 105,
-    "name": "Half-Half",
+    "name": "Half-Half (2)",
     "price": 0,
     "cards": [
       "Mutation (Onyx)",
@@ -1146,52 +870,6 @@
   },
   {
     "id": 1,
-    "name": "Halloween",
-    "price": 50,
-    "cards": [
-      "Spirit (Onyx)",
-      "Halloween",
-      "Trick or Treater",
-      "Witch's Brew",
-      "Murder of Crows",
-      "Sinister Gourdling",
-      "Spooky Tree",
-      "Scarecrow",
-      "Black Widow",
-      "Jack-o'-lantern",
-      "Night Children",
-      "Soul Harvester",
-      "Robot Devil",
-      "Black Cat",
-      "Tombstone"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 83,
-    "name": "Halloween",
-    "price": 50,
-    "cards": [
-      "Spirit (Onyx)",
-      "Halloween",
-      "Trick or Treater",
-      "Witch's Brew",
-      "Murder of Crows",
-      "Sinister Gourdling",
-      "Spooky Tree",
-      "Scarecrow",
-      "Black Widow",
-      "Jack-o'-lantern",
-      "Night Children",
-      "Soul Harvester",
-      "Robot Devil",
-      "Black Cat",
-      "Tombstone"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 88,
     "name": "Halloween",
     "price": 50,
     "cards": [
@@ -1237,52 +915,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 98,
-    "name": "Hope",
-    "price": 250,
-    "cards": [
-      "Love (Onyx)",
-      "Hopefulness",
-      "Vacations",
-      "Last Day of School",
-      "Masked Liberator",
-      "Love Crush",
-      "Train Doggo",
-      "Relentless Friend",
-      "Punch Man",
-      "Vaccine",
-      "Scratch Lottery",
-      "Escape Tunnel",
-      "First Car",
-      "The Kneeling",
-      "Hopeful Robot"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 104,
-    "name": "Hope",
-    "price": 0,
-    "cards": [
-      "Love (Onyx)",
-      "Hopefulness",
-      "Vacations",
-      "Last Day of School",
-      "Masked Liberator",
-      "Love Crush",
-      "Train Doggo",
-      "Relentless Friend",
-      "Punch Man",
-      "Vaccine",
-      "Scratch Lottery",
-      "Escape Tunnel",
-      "First Car",
-      "The Kneeling",
-      "Hopeful Robot"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 57,
     "name": "Hypno",
     "price": 72,
@@ -1308,7 +940,7 @@
   },
   {
     "id": 111,
-    "name": "Hypno",
+    "name": "Hypno (2)",
     "price": 0,
     "cards": [
       "Werewolf (Onyx)",
@@ -1514,52 +1146,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 117,
-    "name": "Meta",
-    "price": 0,
-    "cards": [
-      "Multiples (Onyx)",
-      "Card",
-      "Card Soldiers",
-      "Haunted House of Cards",
-      "Memory Card",
-      "Opal Flower",
-      "Royal Flush",
-      "Tarot Reading",
-      "White-Eyed Dragon",
-      "Credit Card",
-      "Gone Fishin%27",
-      "Greeting Card",
-      "Man of Many Suits",
-      "The Gambler",
-      "Trading Card"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 126,
-    "name": "Meta",
-    "price": 0,
-    "cards": [
-      "Multiples (Onyx)",
-      "Card",
-      "Card Soldiers",
-      "Haunted House of Cards",
-      "Memory Card",
-      "Opal Flower",
-      "Royal Flush",
-      "Tarot Reading",
-      "White-Eyed Dragon",
-      "Credit Card",
-      "Gone Fishin%27",
-      "Greeting Card",
-      "Man of Many Suits",
-      "The Gambler",
-      "Trading Card"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 19,
     "name": "Millionaire",
     "price": 50,
@@ -1629,29 +1215,6 @@
     "onyx_fragments": false
   },
   {
-    "id": 103,
-    "name": "Multiplicity",
-    "price": 0,
-    "cards": [
-      "Metal (Onyx)",
-      "Multiples",
-      "Fighting Champion",
-      "Droid Commander",
-      "Gunslinger",
-      "Hero League",
-      "Multi Dream",
-      "Three Wise Monkeys",
-      "Villain Groupies",
-      "Sleipnir",
-      "Multiverse",
-      "Illusionist",
-      "Vampire Coven",
-      "Many Faced Man",
-      "Commander of Sin"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 9,
     "name": "Muscle",
     "price": 50,
@@ -1676,7 +1239,7 @@
   },
   {
     "id": 92,
-    "name": "Muscle",
+    "name": "Muscle (2)",
     "price": 250,
     "cards": [
       "Strength",
@@ -1722,7 +1285,7 @@
   },
   {
     "id": 100,
-    "name": "Mutant",
+    "name": "Mutant (2)",
     "price": 0,
     "cards": [
       "Sci-Fi (Onyx)",
@@ -1770,52 +1333,6 @@
     "id": 16,
     "name": "Oceana",
     "price": 50,
-    "cards": [
-      "Magic (Onyx)",
-      "Fish",
-      "Hammerhead Shark",
-      "Shark Rider",
-      "Swordfish",
-      "Mantis Shrimp",
-      "Sea Witch",
-      "Laser Shark",
-      "Sharkstorm",
-      "Magicod",
-      "Holy Mackerel",
-      "Blowfish",
-      "Space Admiral",
-      "Stingray",
-      "Mutated Fish"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 116,
-    "name": "Oceana",
-    "price": 0,
-    "cards": [
-      "Magic (Onyx)",
-      "Fish",
-      "Hammerhead Shark",
-      "Shark Rider",
-      "Swordfish",
-      "Mantis Shrimp",
-      "Sea Witch",
-      "Laser Shark",
-      "Sharkstorm",
-      "Magicod",
-      "Holy Mackerel",
-      "Blowfish",
-      "Space Admiral",
-      "Stingray",
-      "Mutated Fish"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 125,
-    "name": "Oceana",
-    "price": 0,
     "cards": [
       "Magic (Onyx)",
       "Fish",
@@ -1951,31 +1468,8 @@
     "onyx_fragments": false
   },
   {
-    "id": 118,
-    "name": "Portal",
-    "price": 0,
-    "cards": [
-      "Extraterrestrial (Onyx)",
-      "Portal (Card)",
-      "Bottomless Void",
-      "Fourth Wall Break",
-      "Holiday Nexus",
-      "Inhumane resourcer",
-      "Mirror Lake",
-      "Portal Mage",
-      "Rift Battle Royale",
-      "Cryptic Corridors",
-      "Infinite Storybook",
-      "Plumbing Nightmare",
-      "Summoning Circle",
-      "Teleporter Malfunction",
-      "War Vortex"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 127,
-    "name": "Portal",
+    "name": "Portal (2)",
     "price": 0,
     "cards": [
       "Extraterrestrial (Onyx)",
@@ -2113,30 +1607,7 @@
   },
   {
     "id": 95,
-    "name": "Regal",
-    "price": 250,
-    "cards": [
-      "Chinchilla (Onyx)",
-      "Royalty",
-      "The Bone King",
-      "Northern King",
-      "Queen of Hearts",
-      "Rebel Space Princess",
-      "Panther Hero",
-      "Robot King",
-      "Queen Bee",
-      "The Musical Symbol",
-      "Mermaid King",
-      "Asteroid Prince",
-      "Cinderella",
-      "Ice Queen",
-      "Rapunzel"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 96,
-    "name": "Regal",
+    "name": "Regal (2)",
     "price": 250,
     "cards": [
       "Chinchilla (Onyx)",
@@ -2182,7 +1653,7 @@
   },
   {
     "id": 112,
-    "name": "Sahara",
+    "name": "Sahara (2)",
     "price": 0,
     "cards": [
       "Relic (Onyx)",
@@ -2251,98 +1722,6 @@
   },
   {
     "id": 75,
-    "name": "Shrine",
-    "price": 50,
-    "cards": [
-      "The Chosen One (Onyx)",
-      "Shrine",
-      "Sakura Spirits",
-      "Evomon",
-      "Three Fates",
-      "Ancient Technology",
-      "Veined Castle",
-      "Majestic Miko",
-      "Amaterasu",
-      "Shrinemasons",
-      "Stone Effigy",
-      "Festival Feast",
-      "Wishing Mallet",
-      "Doom Temple",
-      "Magpyre Maiden"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 76,
-    "name": "Shrine",
-    "price": 50,
-    "cards": [
-      "The Chosen One (Onyx)",
-      "Shrine",
-      "Sakura Spirits",
-      "Evomon",
-      "Three Fates",
-      "Ancient Technology",
-      "Veined Castle",
-      "Majestic Miko",
-      "Amaterasu",
-      "Shrinemasons",
-      "Stone Effigy",
-      "Festival Feast",
-      "Wishing Mallet",
-      "Doom Temple",
-      "Magpyre Maiden"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 77,
-    "name": "Shrine",
-    "price": 50,
-    "cards": [
-      "The Chosen One (Onyx)",
-      "Shrine",
-      "Sakura Spirits",
-      "Evomon",
-      "Three Fates",
-      "Ancient Technology",
-      "Veined Castle",
-      "Majestic Miko",
-      "Amaterasu",
-      "Shrinemasons",
-      "Stone Effigy",
-      "Festival Feast",
-      "Wishing Mallet",
-      "Doom Temple",
-      "Magpyre Maiden"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 78,
-    "name": "Shrine",
-    "price": 50,
-    "cards": [
-      "The Chosen One (Onyx)",
-      "Shrine",
-      "Sakura Spirits",
-      "Evomon",
-      "Three Fates",
-      "Ancient Technology",
-      "Veined Castle",
-      "Majestic Miko",
-      "Amaterasu",
-      "Shrinemasons",
-      "Stone Effigy",
-      "Festival Feast",
-      "Wishing Mallet",
-      "Doom Temple",
-      "Magpyre Maiden"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 99,
     "name": "Shrine",
     "price": 50,
     "cards": [
@@ -2457,76 +1836,7 @@
     "onyx_fragments": false
   },
   {
-    "id": 106,
-    "name": "Subterranean",
-    "price": 0,
-    "cards": [
-      "Sci-Fi (Onyx)",
-      "Underground",
-      "Charon",
-      "Furies",
-      "Persephone",
-      "The Mole King",
-      "Bomb Shelter",
-      "Tarrasque",
-      "Orpheus",
-      "Cave Monkeys",
-      "Driller",
-      "Underground City",
-      "Burrowling",
-      "Precious Ring Bearer",
-      "Miner"
-    ],
-    "onyx_fragments": false
-  },
-  {
     "id": 114,
-    "name": "Summertide",
-    "price": 0,
-    "cards": [
-      "Arcade (Onyx)",
-      "Summertide",
-      "Brain Freeze",
-      "Going Overboard",
-      "Olympian Games",
-      "Pyrotechnics Display",
-      "Staycation",
-      "The Great Outdoors",
-      "Yuletide In July",
-      "Campfire Tails",
-      "Far Far Getaway",
-      "Midsummer Dream",
-      "Monster Matinee",
-      "Returning Reality",
-      "Sandcastle Siege"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 120,
-    "name": "Summertide",
-    "price": 0,
-    "cards": [
-      "Arcade (Onyx)",
-      "Summertide",
-      "Brain Freeze",
-      "Going Overboard",
-      "Olympian Games",
-      "Pyrotechnics Display",
-      "Staycation",
-      "The Great Outdoors",
-      "Yuletide In July",
-      "Campfire Tails",
-      "Far Far Getaway",
-      "Midsummer Dream",
-      "Monster Matinee",
-      "Returning Reality",
-      "Sandcastle Siege"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 123,
     "name": "Summertide",
     "price": 0,
     "cards": [
@@ -2573,7 +1883,7 @@
   },
   {
     "id": 108,
-    "name": "Swift",
+    "name": "Swift (2)",
     "price": 0,
     "cards": [
       "Energy (Onyx)",
@@ -2619,52 +1929,6 @@
   },
   {
     "id": 79,
-    "name": "The_Dark",
-    "price": 250,
-    "cards": [
-      "Madness (Onyx)",
-      "Darkness",
-      "Viral Dance",
-      "Eye Eater",
-      "Fungi King",
-      "Mothman",
-      "Eyed Feet Man",
-      "Wi-Fi Psychic",
-      "Puzzle Cube Head",
-      "Strange Communicator",
-      "Haunted Doll",
-      "Chilling Brina",
-      "The Dadabook",
-      "Killer Clown",
-      "Devil's Boy"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 84,
-    "name": "The_Dark",
-    "price": 250,
-    "cards": [
-      "Madness (Onyx)",
-      "Darkness",
-      "Viral Dance",
-      "Eye Eater",
-      "Fungi King",
-      "Mothman",
-      "Eyed Feet Man",
-      "Wi-Fi Psychic",
-      "Puzzle Cube Head",
-      "Strange Communicator",
-      "Haunted Doll",
-      "Chilling Brina",
-      "The Dadabook",
-      "Killer Clown",
-      "Devil's Boy"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 85,
     "name": "The_Dark",
     "price": 250,
     "cards": [
@@ -2827,29 +2091,6 @@
   },
   {
     "id": 93,
-    "name": "Wintertide",
-    "price": 250,
-    "cards": [
-      "Holidays (Onyx)",
-      "Wintertide",
-      "Christmas Spirits",
-      "Chudolph the Braindeer",
-      "Fairy Light Festival",
-      "Holiday Blockbuster",
-      "Krampus",
-      "Ornamental Pickle",
-      "Stone Hearth",
-      "Cute Carolers",
-      "Festive Coral",
-      "Gelt",
-      "Gifted Birds",
-      "Ice Explorers",
-      "Tinselwebs"
-    ],
-    "onyx_fragments": false
-  },
-  {
-    "id": 94,
     "name": "Wintertide",
     "price": 250,
     "cards": [

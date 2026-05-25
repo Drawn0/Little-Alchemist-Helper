@@ -127,19 +127,47 @@ def main():
             "card_kind": kinds.get(name, "base"),
         }
 
-    packs = []
-    for row in conn.execute("SELECT id, name, price, cards, onyx_fragments FROM card_packs ORDER BY name"):
+    # MORGANlTE has many duplicate pack entries (same name + identical cards).
+    # Dedupe bit-identical packs. For different-content packs that share a name
+    # (legit case: same pack name, different yearly contents), suffix the name
+    # with a (2), (3) counter so the picker can distinguish them.
+    raw_packs = []
+    for row in conn.execute("SELECT id, name, price, cards, onyx_fragments FROM card_packs ORDER BY id"):
         try:
             pack_cards = json.loads(row["cards"]) if row["cards"] else []
         except json.JSONDecodeError:
             pack_cards = []
-        packs.append({
+        raw_packs.append({
             "id": row["id"],
             "name": row["name"],
             "price": row["price"],
             "cards": pack_cards,
             "onyx_fragments": bool(row["onyx_fragments"]),
         })
+
+    seen_keys = set()
+    deduped = []
+    for p in raw_packs:
+        key = (p["name"], tuple(sorted(p["cards"])))
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        deduped.append(p)
+
+    # Suffix repeated names with (n)
+    name_seen_count = {}
+    packs = []
+    for p in sorted(deduped, key=lambda x: (x["name"], x["id"])):
+        name_seen_count[p["name"]] = name_seen_count.get(p["name"], 0) + 1
+    # First pass found total counts; if a name shows up more than once, the
+    # first encounter keeps the bare name and subsequent ones get (2), (3)...
+    name_seen_so_far = {}
+    for p in sorted(deduped, key=lambda x: (x["name"], x["id"])):
+        n = name_seen_so_far.get(p["name"], 0) + 1
+        name_seen_so_far[p["name"]] = n
+        if name_seen_count[p["name"]] > 1 and n > 1:
+            p = {**p, "name": f"{p['name']} ({n})"}
+        packs.append(p)
 
     conn.close()
 

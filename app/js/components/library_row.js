@@ -46,7 +46,7 @@ export function createLibraryRow(card, callbacks = {}) {
     if (info.base_attack != null || info.base_defense != null) {
         const stats = document.createElement('span');
         stats.className = 'lib-row__stats';
-        stats.textContent = `${info.base_attack ?? '?'} / ${info.base_defense ?? '?'}`;
+        stats.innerHTML = `<span class="lib-row__stat-key">ATK</span> ${info.base_attack ?? '?'} <span class="lib-row__stat-sep">·</span> <span class="lib-row__stat-key">DEF</span> ${info.base_defense ?? '?'}`;
         nameBlock.appendChild(stats);
     }
     nameArea.appendChild(nameBlock);

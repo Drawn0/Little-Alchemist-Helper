@@ -14,6 +14,8 @@ import { recordUndo } from './util/undo.js';
 import { createLibraryRow } from './components/library_row.js';
 import { createLibrarySearch } from './components/library_search.js';
 import { createCardThumbnail } from './components/card_thumbnail.js';
+import { loadPackData } from './util/pack_data.js';
+import { initPackPicker, openPackPicker } from './components/pack_picker.js';
 
 // Phase 2: in-session memory for "Recently Added" section (newest first).
 const _recentlyAdded = [];
@@ -262,7 +264,7 @@ function _bindEvents() {
     // ── Library (Phase 2: search-to-add + inline-edit rows) ────────────────────
     document.getElementById('btn-lib-to-deck').addEventListener('click', _addSelectedToDeck);
     document.getElementById('btn-lib-add-pack').addEventListener('click', () => {
-        showToast('Pack picker coming in Checkpoint C');
+        openPackPicker({ onCommit: _bulkAddFromPack });
     });
     // Outside-click collapses any expanded row
     document.addEventListener('click', (e) => {
@@ -486,10 +488,11 @@ async function _enterApp() {
         try { localStorage.setItem('la_library', JSON.stringify(STATE.library)); } catch { /* ignore */ }
     }
     _resolveIds();
-    // Phase 2: load enriched card metadata before first paint so thumbnails
-    // and the search index are ready.
-    await loadCardData();
+    // Phase 2: load enriched card metadata + pack data before first paint so
+    // thumbnails, search, and pack picker are all ready.
+    await Promise.all([loadCardData(), loadPackData()]);
     _initLibraryUI();
+    initPackPicker({ openModal: _openModal, closeModal: _closeModal });
     _refreshAll();
     setStatus('Loaded ' + Object.keys(STATE.comboDict).length.toLocaleString() + ' combinations  |  ' + STATE.library.length + ' cards in library');
 }
@@ -630,6 +633,38 @@ function _refreshAfterLibraryMutation() {
     refreshLibrary();
     refreshSuggestions();
     refreshScore();
+}
+
+function _bulkAddFromPack(cards) {
+    if (!cards || cards.length === 0) return;
+    const before = STATE.library.map((c) => ({ ...c }));
+    let added = 0;
+    let incremented = 0;
+    for (const { name, onyx } of cards) {
+        const existing = _findEntry(name, { fused: false, onyx });
+        if (existing) {
+            existing.quantity += 1;
+            incremented++;
+        } else {
+            const id = STATE.comboNameToId[name] || STATE.nameToId[name] || 0;
+            STATE.library.push({
+                name, level: 1, fused: false, onyx, quantity: 1, id,
+                added_at: Date.now(),
+            });
+            added++;
+        }
+        _pushRecent(name);
+    }
+    STATE.library.sort((a, b) => a.name.localeCompare(b.name));
+    _persistLibrary();
+    _refreshAfterLibraryMutation();
+    showToast(`Pack: +${added} new, +1 to ${incremented}`);
+    recordUndo('pack add', () => {
+        STATE.library.length = 0;
+        for (const c of before) STATE.library.push(c);
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+    });
 }
 
 function _resolveIds() {
