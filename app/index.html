@@ -114,6 +114,7 @@
                             <th style="width:32px" class="center" data-col="level">Lv</th>
                             <th style="width:30px" class="center">Fu</th>
                             <th style="width:36px" class="center">Onyx</th>
+                            <th style="width:36px" class="center"></th>
                         </tr>
                     </thead>
                     <tbody id="deck-tbody"></tbody>
@@ -126,9 +127,10 @@
                 <button id="btn-deck-remove">× Remove</button>
             </div>
             <div class="btn-toolbar">
-                <button id="btn-fill" class="accent">⚡ Fill Deck</button>
-                <button id="btn-advanced-fill">🧠 Advanced Fill</button>
-                <button id="btn-try-all">🔁 Try All Cards</button>
+                <button id="btn-fill" class="accent" title="Keep current deck, greedily complete to target">⚡ Fill Deck</button>
+                <button id="btn-complete-deck" title="Keep current deck fixed, fill + optimize the remaining slots (best completion)">🎯 Best Completion</button>
+                <button id="btn-advanced-fill" title="Rebuild from a single start card (ignores current deck)">🧠 Advanced Fill</button>
+                <button id="btn-try-all" title="Try every library card as the start card → Leaderboard">🔁 Try All Starts</button>
                 <button id="btn-to-leaderboard" title="Copy current deck to Leaderboard">🏆 Leaderboard</button>
                 <button id="btn-export-deck">📤 Export</button>
                 <button id="btn-clear-deck" class="warn ml-auto">🗑 Clear</button>

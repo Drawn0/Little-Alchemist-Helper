@@ -352,7 +352,7 @@ export function optimisePosition(comboDict, library, deck, position, settings, m
  * Full Hill-Climb – exhaustive single-swap search.
  * Stops when no improving swap exists or maxPasses reached.
  */
-export function hillClimb(comboDict, library, startDeck, settings, progressCb, cancelledCb, maxPasses = 50) {
+export function hillClimb(comboDict, library, startDeck, settings, progressCb, cancelledCb, maxPasses = 50, lockCount = 0) {
     const keyLookup  = buildKeyLookup(library);
     const nameMaxQty = buildNameMaxQty(library);
     const deck = [...startDeck];
@@ -372,7 +372,7 @@ export function hillClimb(comboDict, library, startDeck, settings, progressCb, c
         let bestDelta = 0.0;
         let bestSwap = null;
 
-        for (let deckIdx = 0; deckIdx < deck.length; deckIdx++) {
+        for (let deckIdx = lockCount; deckIdx < deck.length; deckIdx++) {
             const oldKey  = deck[deckIdx];
             const oldName = (keyLookup[oldKey] || {}).name;
 

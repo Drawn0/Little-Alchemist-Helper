@@ -45,6 +45,12 @@ self.onmessage = function (e) {
                 result = fillDeck(comboDict, library, startCard, targetSize, settings, progressCb);
             } else if (job === 'fill_seed') {
                 result = fillFromSeed(comboDict, library, seedDeck || [], targetSize, settings, progressCb);
+            } else if (job === 'complete_seed') {
+                // Keep the seed cards fixed, fill the rest, then hill-climb only
+                // the non-seed positions for the best completion.
+                const seed = seedDeck || [];
+                const filled = fillFromSeed(comboDict, library, seed, targetSize, settings);
+                result = hillClimb(comboDict, library, filled, settings, progressCb, cancelledCb, 50, seed.length);
             } else if (job === 'advanced') {
                 result = advancedFill(comboDict, library, startCard, targetSize, settings, progressCb);
             } else if (job === 'hillclimb') {

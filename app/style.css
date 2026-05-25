@@ -914,6 +914,24 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
     box-shadow: 0 0 0 1px #7a5db8, 0 0 6px rgba(122,93,184,0.6);
 }
 
+/* Inline deck-row remove button */
+.deck-row__remove {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--warn);
+    font-size: 18px;
+    line-height: 1;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.deck-row__remove:hover { background: rgba(243,139,168,0.15); border-color: var(--warn); }
+
+/* Clickable suggestion rows */
+.sug-row--clickable { cursor: pointer; }
+.sug-row--clickable:hover { background: var(--bg3); }
+
 /* Deck target-size stepper in the start-card row */
 .deck-target {
     display: inline-flex;

@@ -76,20 +76,31 @@ const FILTER = {
     includeFusion: true,
     sort: 'az',
 };
+const FILTER_VERSION = 2;   // bump to migrate persisted filter state
 function _loadFilterSort() {
     try {
         const raw = localStorage.getItem('la_filter_sort');
         if (!raw) return;
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.rarities)) FILTER.rarities = new Set(parsed.rarities.filter((r) => RARITIES.includes(r)));
-        if (typeof parsed.includeCombo === 'boolean') FILTER.includeCombo = parsed.includeCombo;
-        if (typeof parsed.includeFusion === 'boolean') FILTER.includeFusion = parsed.includeFusion;
         if (SORT_OPTIONS.includes(parsed.sort)) FILTER.sort = parsed.sort;
+        // v2 migration: combos/finals now default ON (show everything). Saved
+        // state from v1 had them OFF, which hid most cards. Ignore the old
+        // combo/fusion booleans unless the saved state is already v2+.
+        if (parsed.v >= FILTER_VERSION) {
+            if (typeof parsed.includeCombo === 'boolean') FILTER.includeCombo = parsed.includeCombo;
+            if (typeof parsed.includeFusion === 'boolean') FILTER.includeFusion = parsed.includeFusion;
+        } else {
+            FILTER.includeCombo = true;
+            FILTER.includeFusion = true;
+            _saveFilterSort();   // upgrade the stored record
+        }
     } catch { /* ignore */ }
 }
 function _saveFilterSort() {
     try {
         localStorage.setItem('la_filter_sort', JSON.stringify({
+            v: FILTER_VERSION,
             rarities: [...FILTER.rarities],
             includeCombo: FILTER.includeCombo,
             includeFusion: FILTER.includeFusion,
@@ -400,6 +411,7 @@ function _bindEvents() {
     document.getElementById('btn-deck-down').addEventListener('click', _deckDown);
     document.getElementById('btn-deck-remove').addEventListener('click', _removeFromDeck);
     document.getElementById('btn-fill').addEventListener('click', () => _runAlgorithm('fill'));
+    document.getElementById('btn-complete-deck').addEventListener('click', () => _runAlgorithm('complete'));
     document.getElementById('btn-advanced-fill').addEventListener('click', () => _runAlgorithm('advanced'));
     document.getElementById('btn-try-all').addEventListener('click', () => _runAlgorithm('try_all'));
     document.getElementById('btn-to-leaderboard').addEventListener('click', _copyToLeaderboard);
@@ -841,7 +853,8 @@ function _makeLibraryRow(card) {
         startExpanded: _expandedKey === _cardKey(card),
         onToggleExpand: (isOpen) => { _expandedKey = isOpen ? _cardKey(card) : null; },
         onChangeLevel: (v) => _applyIdentityChange(card, { level: v }, `Lv ${v}`),
-        onChangeFused: (v) => _applyIdentityChange(card, { fused: v }, `fused ${v ? 'on' : 'off'}`),
+        // Marking a card fused implies it's maxed (Lv 5) — set both together.
+        onChangeFused: (v) => _applyIdentityChange(card, v ? { fused: true, level: 5 } : { fused: false }, `fused ${v ? 'on (Lv 5)' : 'off'}`),
         onChangeOnyx:  (v) => _applyIdentityChange(card, { onyx: v }, `onyx ${v ? 'on' : 'off'}`),
         onChangeQty: (v) => {
             const prev = card.quantity;
@@ -1053,6 +1066,28 @@ function refreshDeck() {
         onTd.textContent = card.onyx ? '✓' : '–';
         tr.appendChild(onTd);
 
+        // Inline remove button per deck row
+        const rmTd = document.createElement('td');
+        rmTd.className = 'center';
+        const rmBtn = document.createElement('button');
+        rmBtn.type = 'button';
+        rmBtn.className = 'deck-row__remove';
+        rmBtn.textContent = '×';
+        rmBtn.title = 'Remove from deck';
+        rmBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const removed = STATE.deck.splice(i, 1)[0];
+            _saveDeck();
+            _refreshAll();
+            showToast(`Removed ${_dispName(removed)} from deck`);
+            recordUndo(`re-add ${_dispName(removed)}`, () => {
+                STATE.deck.splice(i, 0, removed);
+                _saveDeck(); _refreshAll();
+            });
+        });
+        rmTd.appendChild(rmBtn);
+        tr.appendChild(rmTd);
+
         tr.addEventListener('click', () => {
             document.querySelectorAll('#deck-tbody tr').forEach(r => r.classList.remove('selected'));
             tr.classList.add('selected');
@@ -1102,10 +1137,12 @@ function refreshSuggestions() {
 
         tr.appendChild(_cardCell(topComboCard || { name: topCombo }, { size: 28, title: topComboLabel }));
 
+        // Click a suggestion to add it straight to the deck.
+        tr.classList.add('sug-row--clickable');
+        tr.title = `Tap to add ${_dispName(libCard)} to the deck`;
         tr.addEventListener('click', () => {
-            document.querySelectorAll('#sug-tbody tr').forEach(r => r.classList.remove('selected'));
-            tr.classList.add('selected');
             _sugSelectedKey = key;
+            _addToDeck(key);
         });
         tbody.appendChild(tr);
     }
@@ -1625,7 +1662,7 @@ function _runAlgorithm(job) {
     // Seeded fill keeps the current deck and completes it; only requires a
     // start card when the deck is empty (otherwise the existing cards seed it).
     const seedDeck = STATE.deck.map((c) => _cardKey(c));
-    if (job === 'fill') {
+    if (job === 'fill' || job === 'complete') {
         if (seedDeck.length === 0 && !startCard) {
             _toast('Add a card to the deck or pick a start card first.', 'error');
             return;
@@ -1638,11 +1675,12 @@ function _runAlgorithm(job) {
         }
     }
 
-    // 'fill' becomes a seeded completion; advanced/try_all unchanged.
-    const realJob = job === 'fill' ? 'fill_seed' : job;
+    // 'fill' → greedy seeded completion; 'complete' → seeded + optimize remaining.
+    const realJob = job === 'fill' ? 'fill_seed' : (job === 'complete' ? 'complete_seed' : job);
 
     const label = {
         fill:     '⚡ Completing deck…',
+        complete: '🎯 Finding best completion…',
         advanced: '🧠 Running advanced fill…',
         try_all:  '🔁 Trying all start cards…',
     }[job] || 'Running…';
