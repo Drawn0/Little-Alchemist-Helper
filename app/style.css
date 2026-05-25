@@ -884,6 +884,18 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.lib-row__to-deck {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--accent2);
+    font-size: 20px;
+    line-height: 1;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.lib-row__to-deck:hover { background: rgba(137,180,250,0.15); border-color: var(--accent2); }
 .lib-row__delete {
     width: 44px;
     height: 44px;
@@ -896,6 +908,11 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
     cursor: pointer;
 }
 .lib-row__delete:hover { background: rgba(243,139,168,0.15); border-color: var(--warn); }
+
+/* Onyx thumbnails get a subtle purple glow so they read distinctly. */
+.card-thumb--onyx {
+    box-shadow: 0 0 0 1px #7a5db8, 0 0 6px rgba(122,93,184,0.6);
+}
 .lib-row__expanded {
     display: flex;
     flex-wrap: wrap;

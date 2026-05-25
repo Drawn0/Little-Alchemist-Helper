@@ -69,8 +69,8 @@ const SORT_OPTIONS = ['az', 'za', 'newest', 'oldest', 'rarity', 'deck-first', 's
 
 const FILTER = {
     rarities: new Set(RARITIES),    // all on by default
-    includeCombo: false,
-    includeFusion: false,
+    includeCombo: true,             // show everything by default; toggles NARROW
+    includeFusion: true,
     sort: 'az',
 };
 function _loadFilterSort() {
@@ -229,6 +229,17 @@ function _loadFromStorage() {
     for (const c of STATE.library) {
         if (typeof c.added_at !== 'number') c.added_at = 0;
     }
+    // Safety: keep a rolling backup of the last known-good library so a bad
+    // migration or edit can be recovered. Only overwrite the backup when the
+    // current library is non-empty (never clobber a good backup with []).
+    try {
+        if (STATE.library.length > 0) {
+            localStorage.setItem('la_library_backup', JSON.stringify({
+                savedAt: new Date().toISOString(),
+                library: STATE.library,
+            }));
+        }
+    } catch { /* ignore */ }
     try {
         const s = localStorage.getItem('la_settings');
         if (s) Object.assign(STATE.settings, JSON.parse(s));
@@ -859,6 +870,9 @@ function _makeLibraryRow(card) {
                 currentCard: card,
                 onPick: (newName) => _renameLibraryCard(card, newName),
             });
+        },
+        onAddToDeck: () => {
+            _addToDeck(_cardKey(card));
         },
     });
 }

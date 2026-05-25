@@ -16,7 +16,10 @@ export function createCardThumbnail({ name, level = null, fused = false, onyx = 
     const root = document.createElement('div');
     root.className = 'card-thumb';
     root.style.width = root.style.height = `${size}px`;
-    root.style.borderColor = rarityColor(rarity);
+    // Onyx variants get the onyx-purple border regardless of base rarity, so
+    // an onyx card is visually distinct from its gold/diamond/etc. base.
+    root.style.borderColor = onyx ? rarityColor('Onyx') : rarityColor(rarity);
+    if (onyx) root.classList.add('card-thumb--onyx');
     root.dataset.cardName = name;
 
     const img = document.createElement('img');

@@ -71,6 +71,18 @@ export function createLibraryRow(card, callbacks = {}) {
     });
     main.appendChild(qty);
 
+    const toDeck = document.createElement('button');
+    toDeck.type = 'button';
+    toDeck.className = 'lib-row__to-deck';
+    toDeck.textContent = '→';
+    toDeck.title = 'Add to deck';
+    toDeck.setAttribute('aria-label', 'Add to deck');
+    toDeck.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (callbacks.onAddToDeck) callbacks.onAddToDeck();
+    });
+    main.appendChild(toDeck);
+
     const del = document.createElement('button');
     del.type = 'button';
     del.className = 'lib-row__delete';
