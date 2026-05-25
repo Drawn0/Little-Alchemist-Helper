@@ -834,9 +834,32 @@ function _makeRecentRow(name) {
 
 // ── Deck refresh ──────────────────────────────────────────────────────────────
 
+// Helper: build a <td> containing a card thumbnail + name for use in any
+// of the read-only tables (deck, suggestions, leaderboard).
+function _cardCell(card, { size = 32, title = null } = {}) {
+    const td = document.createElement('td');
+    td.className = 'cell-card';
+    if (title) td.title = title;
+    const wrap = document.createElement('span');
+    wrap.className = 'cell-card__inner';
+    if (card && card.name) {
+        wrap.appendChild(createCardThumbnail({
+            name: card.name,
+            level: card.level || null,
+            fused: !!card.fused,
+            onyx: !!card.onyx,
+            size,
+        }));
+    }
+    const txt = document.createElement('span');
+    txt.className = 'cell-card__name';
+    txt.textContent = card ? _dispName(card) : '';
+    wrap.appendChild(txt);
+    td.appendChild(wrap);
+    return td;
+}
+
 function refreshDeck() {
-    // Update header sort indicators
-    const _rarityOrder = { 'Common': 0, 'Uncommon': 1, 'Rare': 2, 'Onyx': 3 };
     document.querySelectorAll('#deck-table thead th').forEach(th => {
         th.classList.remove('sort-asc', 'sort-desc');
         if (th.dataset.col && th.dataset.col === _deckSortCol) {
@@ -851,14 +874,34 @@ function refreshDeck() {
         const tr = document.createElement('tr');
         tr.dataset.idx = i;
         if (i === _deckSelectedIdx) tr.classList.add('selected');
-        tr.innerHTML = `
-            <td class="center text-fg2">${i + 1}</td>
-            <td title="${esc(_dispName(card))}">${card.fused ? '<img src="assets/Orb.png" class="orb-icon" alt="fused" title="Fused">' : ''}${esc(_dispName(card))}</td>
-            <td class="center">${_rarityImg(card)}</td>
-            <td class="center">${card.level || '?'}</td>
-            <td class="center">${card.fused ? '✓' : '–'}</td>
-            <td class="center">${card.onyx  ? '✓' : '–'}</td>
-        `;
+
+        const idxTd = document.createElement('td');
+        idxTd.className = 'center text-fg2';
+        idxTd.textContent = i + 1;
+        tr.appendChild(idxTd);
+
+        tr.appendChild(_cardCell(card, { size: 32, title: _dispName(card) }));
+
+        const rarTd = document.createElement('td');
+        rarTd.className = 'center';
+        rarTd.innerHTML = _rarityImg(card);
+        tr.appendChild(rarTd);
+
+        const lvTd = document.createElement('td');
+        lvTd.className = 'center';
+        lvTd.textContent = card.level || '?';
+        tr.appendChild(lvTd);
+
+        const fuTd = document.createElement('td');
+        fuTd.className = 'center';
+        fuTd.textContent = card.fused ? '✓' : '–';
+        tr.appendChild(fuTd);
+
+        const onTd = document.createElement('td');
+        onTd.className = 'center';
+        onTd.textContent = card.onyx ? '✓' : '–';
+        tr.appendChild(onTd);
+
         tr.addEventListener('click', () => {
             document.querySelectorAll('#deck-tbody tr').forEach(r => r.classList.remove('selected'));
             tr.classList.add('selected');
@@ -893,12 +936,21 @@ function refreshSuggestions() {
         const tr = document.createElement('tr');
         tr.dataset.key = key;
         if (key === _sugSelectedKey) tr.classList.add('selected');
-        tr.innerHTML = `
-            <td class="center text-fg2">${i + 1}</td>
-            <td title="${esc(_dispName(libCard))}">${libCard && libCard.fused ? '<img src="assets/Orb.png" class="orb-icon" alt="fused" title="Fused">' : ''}${esc(_dispName(libCard))}</td>
-            <td class="center text-score">${score.toFixed(1)}</td>
-            <td title="${esc(topComboLabel)}">${esc(topComboLabel)}</td>
-        `;
+
+        const idxTd = document.createElement('td');
+        idxTd.className = 'center text-fg2';
+        idxTd.textContent = i + 1;
+        tr.appendChild(idxTd);
+
+        tr.appendChild(_cardCell(libCard, { size: 32, title: _dispName(libCard) }));
+
+        const scoreTd = document.createElement('td');
+        scoreTd.className = 'center text-score';
+        scoreTd.textContent = score.toFixed(1);
+        tr.appendChild(scoreTd);
+
+        tr.appendChild(_cardCell(topComboCard || { name: topCombo }, { size: 28, title: topComboLabel }));
+
         tr.addEventListener('click', () => {
             document.querySelectorAll('#sug-tbody tr').forEach(r => r.classList.remove('selected'));
             tr.classList.add('selected');
@@ -1006,13 +1058,52 @@ function refreshLeaderboard() {
         const tr = document.createElement('tr');
         tr.dataset.idx = i;
         if (i === _lbSelectedIdx) tr.classList.add('selected');
-        tr.innerHTML = `
-            <td class="center text-fg2">${i + 1}</td>
-            <td title="${esc(startDisp)}">${esc(startDisp)}</td>
-            <td class="center text-score">${Math.round(entry.score).toLocaleString()}</td>
-            <td class="center">${entry.deck.length}</td>
-            <td title="${esc(deckNames.join(', '))}">${esc(preview)}</td>
-        `;
+
+        const idxTd = document.createElement('td');
+        idxTd.className = 'center text-fg2';
+        idxTd.textContent = i + 1;
+        tr.appendChild(idxTd);
+
+        const startCard = typeof entry.startCard === 'object'
+            ? entry.startCard
+            : (keyLookup[entry.startCard] || { name: _nameFromKey(entry.startCard) });
+        tr.appendChild(_cardCell(startCard, { size: 32, title: startDisp }));
+
+        const scoreTd = document.createElement('td');
+        scoreTd.className = 'center text-score';
+        scoreTd.textContent = Math.round(entry.score).toLocaleString();
+        tr.appendChild(scoreTd);
+
+        const cntTd = document.createElement('td');
+        cntTd.className = 'center';
+        cntTd.textContent = entry.deck.length;
+        tr.appendChild(cntTd);
+
+        // Deck preview: small horizontal strip of up to 8 thumbnails
+        const previewTd = document.createElement('td');
+        previewTd.className = 'cell-deck-preview';
+        previewTd.title = deckNames.join(', ');
+        const strip = document.createElement('span');
+        strip.className = 'deck-preview-strip';
+        const previewItems = entry.deck.slice(0, 8).map(_resolveCard);
+        for (const c of previewItems) {
+            strip.appendChild(createCardThumbnail({
+                name: c.name,
+                level: c.level || null,
+                fused: !!c.fused,
+                onyx: !!c.onyx,
+                size: 24,
+            }));
+        }
+        if (entry.deck.length > 8) {
+            const more = document.createElement('span');
+            more.className = 'deck-preview-strip__more';
+            more.textContent = `+${entry.deck.length - 8}`;
+            strip.appendChild(more);
+        }
+        previewTd.appendChild(strip);
+        tr.appendChild(previewTd);
+
         tr.addEventListener('click', () => {
             document.querySelectorAll('#lb-tbody tr').forEach(r => r.classList.remove('selected'));
             tr.classList.add('selected');

@@ -1263,6 +1263,37 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 }
 
 /* ============================================================
+   Read-only table card cells (deck / suggestions / leaderboard)
+   ============================================================ */
+.cell-card { padding: 4px 6px; }
+.cell-card__inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+}
+.cell-card__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.cell-deck-preview { padding: 4px 6px; }
+.deck-preview-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: nowrap;
+}
+.deck-preview-strip__more {
+    font-size: 12px;
+    color: var(--fg2);
+    font-weight: 700;
+    padding: 0 4px;
+}
+
+/* ============================================================
    Toast + Undo (Phase 2 infra)
    ============================================================ */
 #toast-host {
