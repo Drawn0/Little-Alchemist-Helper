@@ -395,6 +395,7 @@ function _bindEvents() {
 
     // ── Deck ──────────────────────────────────────────────────────────────────
     document.getElementById('btn-set-start').addEventListener('click', _setStartCard);
+    _initDeckTarget();
     document.getElementById('btn-deck-up').addEventListener('click', _deckUp);
     document.getElementById('btn-deck-down').addEventListener('click', _deckDown);
     document.getElementById('btn-deck-remove').addEventListener('click', _removeFromDeck);
@@ -1059,7 +1060,7 @@ function refreshDeck() {
         });
         tbody.appendChild(tr);
     }
-    document.getElementById('deck-count').textContent = '(' + STATE.deck.length + ' cards)';
+    document.getElementById('deck-count').textContent = `(${STATE.deck.length} / ${STATE.settings.n_cards})`;
 }
 
 // ── Suggestions refresh ───────────────────────────────────────────────────────
@@ -1488,6 +1489,29 @@ function _addToDeck(cardKey) {
     refreshScore();
 }
 
+function _initDeckTarget() {
+    const input = document.getElementById('deck-target-input');
+    const minus = document.getElementById('deck-target-minus');
+    const plus = document.getElementById('deck-target-plus');
+    if (!input) return;
+
+    const clamp = (v) => Math.max(1, Math.min(60, v || 1));
+    const sync = () => {
+        const v = clamp(STATE.settings.n_cards);
+        STATE.settings.n_cards = v;
+        input.value = v;
+        try { localStorage.setItem('la_settings', JSON.stringify(STATE.settings)); } catch { /* ignore */ }
+        // Reflect in the deck count header (shows current / target)
+        const count = document.getElementById('deck-count');
+        if (count) count.textContent = `(${STATE.deck.length} / ${v})`;
+    };
+    input.value = clamp(STATE.settings.n_cards);
+    input.addEventListener('change', () => { STATE.settings.n_cards = clamp(parseInt(input.value, 10)); sync(); });
+    minus.addEventListener('click', () => { STATE.settings.n_cards = clamp(STATE.settings.n_cards - 1); sync(); });
+    plus.addEventListener('click', () => { STATE.settings.n_cards = clamp(STATE.settings.n_cards + 1); sync(); });
+    sync();
+}
+
 function _setStartCard() {
     const sel = document.getElementById('start-card-select');
     const key = sel.value;  // now a composite key
@@ -1598,15 +1622,27 @@ function _runAlgorithm(job) {
 
     const startCard = document.getElementById('start-card-select').value || STATE.startCard;
 
-    if (job === 'fill' || job === 'advanced') {
+    // Seeded fill keeps the current deck and completes it; only requires a
+    // start card when the deck is empty (otherwise the existing cards seed it).
+    const seedDeck = STATE.deck.map((c) => _cardKey(c));
+    if (job === 'fill') {
+        if (seedDeck.length === 0 && !startCard) {
+            _toast('Add a card to the deck or pick a start card first.', 'error');
+            return;
+        }
+    }
+    if (job === 'advanced') {
         if (!startCard) { _toast('Select a start card.', 'error'); return; }
         if (!buildKeyLookup(STATE.library)[startCard]) {
             _toast(`Selected start card is not in your library.`, 'error'); return;
         }
     }
 
+    // 'fill' becomes a seeded completion; advanced/try_all unchanged.
+    const realJob = job === 'fill' ? 'fill_seed' : job;
+
     const label = {
-        fill:     '⚡ Filling deck…',
+        fill:     '⚡ Completing deck…',
         advanced: '🧠 Running advanced fill…',
         try_all:  '🔁 Trying all start cards…',
     }[job] || 'Running…';
@@ -1615,8 +1651,9 @@ function _runAlgorithm(job) {
     setProgress(0);
     _setWorkerBusy(true);
 
-    // Clear deck for fill operations
-    if (job === 'fill' || job === 'advanced') {
+    // Advanced fill rebuilds from a single start card, so clear first.
+    // Seeded fill (job==='fill') keeps the current deck.
+    if (job === 'advanced') {
         STATE.deck = [];
         refreshDeck();
     }
@@ -1628,12 +1665,16 @@ function _runAlgorithm(job) {
         return;
     }
 
+    // Seed fill from current deck; if empty, seed with the chosen start card.
+    const effectiveSeed = seedDeck.length > 0 ? seedDeck : (startCard ? [startCard] : []);
+
     const msg = {
         type:       'run',
-        job,
+        job:        realJob,
         comboDict:  STATE.comboDict,
         library:    STATE.library,
         startCard,
+        seedDeck:   effectiveSeed,
         targetSize: STATE.settings.n_cards,
         settings:   STATE.settings,
     };

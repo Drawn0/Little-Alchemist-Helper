@@ -263,6 +263,33 @@ export function fillDeck(comboDict, library, startCard, targetSize, settings, pr
     return deck;
 }
 
+/**
+ * Fill from an existing seed deck — keeps every card already placed and greedily
+ * completes the deck up to targetSize. Each seed card effectively acts as a
+ * fixed start card. If the seed is empty, falls back to picking the best
+ * opening card automatically.
+ *
+ * @param {string[]} seedDeck - composite card keys already in the deck
+ */
+export function fillFromSeed(comboDict, library, seedDeck, targetSize, settings, progressCb) {
+    const deck = [...seedDeck];
+    if (deck.length === 0) {
+        const s = nextSuggestion(comboDict, library, [], settings);
+        if (!s) return [];
+        deck.push(s);
+    }
+    const total = Math.max(1, targetSize - deck.length);
+    let done = 0;
+    while (deck.length < targetSize) {
+        const suggestion = nextSuggestion(comboDict, library, deck, settings);
+        if (!suggestion) break;
+        deck.push(suggestion);
+        done++;
+        if (progressCb) progressCb(done, total);
+    }
+    return deck;
+}
+
 // ---------------------------------------------------------------------------
 // Algorithm: Advanced Fill
 // ---------------------------------------------------------------------------

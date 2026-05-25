@@ -14,7 +14,7 @@
  *   { type: 'error',     message: string }
  */
 
-import { fillDeck, advancedFill, hillClimb, beamSearch, simulatedAnnealing, tryAllCards } from './engine.js';
+import { fillDeck, fillFromSeed, advancedFill, hillClimb, beamSearch, simulatedAnnealing, tryAllCards } from './engine.js';
 
 let _cancelled = false;
 
@@ -29,7 +29,7 @@ self.onmessage = function (e) {
     if (msg.type === 'run') {
         _cancelled = false;
         const { job, comboDict, library, startCard, targetSize, settings,
-                beamWidth, saIterations } = msg;
+                beamWidth, saIterations, seedDeck } = msg;
 
         function progressCb(current, total, label) {
             const pct = total > 0 ? Math.round(current / total * 100) : 0;
@@ -43,6 +43,8 @@ self.onmessage = function (e) {
 
             if (job === 'fill') {
                 result = fillDeck(comboDict, library, startCard, targetSize, settings, progressCb);
+            } else if (job === 'fill_seed') {
+                result = fillFromSeed(comboDict, library, seedDeck || [], targetSize, settings, progressCb);
             } else if (job === 'advanced') {
                 result = advancedFill(comboDict, library, startCard, targetSize, settings, progressCb);
             } else if (job === 'hillclimb') {

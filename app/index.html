@@ -95,7 +95,13 @@
             <div id="startcard-row">
                 <label>Start Card:</label>
                 <select id="start-card-select"></select>
-                <button id="btn-set-start">Set as 1st</button>
+                <button id="btn-set-start" title="Add this card to the deck as a seed">→ Add</button>
+                <span class="deck-target">
+                    <label for="deck-target-input">Target:</label>
+                    <button id="deck-target-minus" class="qty-ctrl__btn" aria-label="Fewer cards">−</button>
+                    <input type="number" id="deck-target-input" min="1" max="60" step="1" />
+                    <button id="deck-target-plus" class="qty-ctrl__btn" aria-label="More cards">+</button>
+                </span>
             </div>
 
             <div class="table-wrap" id="deck-table-wrap">

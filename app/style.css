@@ -913,6 +913,31 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .card-thumb--onyx {
     box-shadow: 0 0 0 1px #7a5db8, 0 0 6px rgba(122,93,184,0.6);
 }
+
+/* Deck target-size stepper in the start-card row */
+.deck-target {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--fg2);
+}
+.deck-target .qty-ctrl__btn {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+}
+#deck-target-input {
+    width: 44px;
+    height: 30px;
+    text-align: center;
+    font-size: 14px;
+    background: var(--entry-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
 .lib-row__expanded {
     display: flex;
     flex-wrap: wrap;
