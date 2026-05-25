@@ -407,6 +407,13 @@ function _bindEvents() {
     // ── Deck ──────────────────────────────────────────────────────────────────
     document.getElementById('btn-set-start').addEventListener('click', _setStartCard);
     _initDeckTarget();
+    document.getElementById('deck-sort').addEventListener('change', (e) => {
+        const v = e.target.value;
+        if (!v) { refreshDeck(); return; }   // "Deck order" — leave as-is
+        const [col, dir] = v.split('-');
+        _sortDeckBy(col, dir === 'asc');
+        _saveDeck();
+    });
     document.getElementById('btn-deck-up').addEventListener('click', _deckUp);
     document.getElementById('btn-deck-down').addEventListener('click', _deckDown);
     document.getElementById('btn-deck-remove').addEventListener('click', _removeFromDeck);

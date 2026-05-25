@@ -932,6 +932,26 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .sug-row--clickable { cursor: pointer; }
 .sug-row--clickable:hover { background: var(--bg3); }
 
+/* Deck sort row */
+#deck-sort-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--fg2);
+}
+#deck-sort {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 13px;
+    background: var(--entry-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
 /* Deck target-size stepper in the start-card row */
 .deck-target {
     display: inline-flex;
