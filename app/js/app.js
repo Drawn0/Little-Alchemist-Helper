@@ -8,7 +8,7 @@ import {
     fillDeck, advancedFill, buildKeyLookup, defaultSettings,
 } from './engine.js';
 import comboData from '../combo_data.json';
-import { loadCardData, hasCard } from './util/card_data.js';
+import { loadCardData, hasCard, getCard } from './util/card_data.js';
 import { showToast } from './util/toast.js';
 import { recordUndo } from './util/undo.js';
 import { createLibraryRow } from './components/library_row.js';
@@ -22,6 +22,88 @@ function _pushRecent(name) {
     if (idx >= 0) _recentlyAdded.splice(idx, 1);
     _recentlyAdded.unshift(name);
     if (_recentlyAdded.length > 10) _recentlyAdded.length = 10;
+}
+
+// ── Phase 2A: filter + sort state (persisted) ────────────────────────────────
+const RARITIES = ['Bronze', 'Silver', 'Gold', 'Diamond', 'Onyx'];
+const RARITY_RANK = { Bronze: 0, Silver: 1, Gold: 2, Diamond: 3, Onyx: 4 };
+const SORT_OPTIONS = ['az', 'za', 'newest', 'oldest', 'rarity', 'deck-first', 'suggested'];
+
+const FILTER = {
+    rarities: new Set(RARITIES),    // all on by default
+    includeCombo: false,
+    includeFusion: false,
+    sort: 'az',
+};
+function _loadFilterSort() {
+    try {
+        const raw = localStorage.getItem('la_filter_sort');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.rarities)) FILTER.rarities = new Set(parsed.rarities.filter((r) => RARITIES.includes(r)));
+        if (typeof parsed.includeCombo === 'boolean') FILTER.includeCombo = parsed.includeCombo;
+        if (typeof parsed.includeFusion === 'boolean') FILTER.includeFusion = parsed.includeFusion;
+        if (SORT_OPTIONS.includes(parsed.sort)) FILTER.sort = parsed.sort;
+    } catch { /* ignore */ }
+}
+function _saveFilterSort() {
+    try {
+        localStorage.setItem('la_filter_sort', JSON.stringify({
+            rarities: [...FILTER.rarities],
+            includeCombo: FILTER.includeCombo,
+            includeFusion: FILTER.includeFusion,
+            sort: FILTER.sort,
+        }));
+    } catch { /* ignore */ }
+}
+
+/** Returns true if a card name should appear under the current filter. */
+function _passesFilter(name) {
+    const info = getCard(name);
+    const rarity = (info && info.rarity) || '';
+    const kind = (info && info.card_kind) || 'base';
+    // If rarity is unknown, only filter it out when the user has explicitly
+    // turned off all rarities; otherwise show (avoid hiding the MORGANlTE-only
+    // tail).
+    if (rarity && !FILTER.rarities.has(rarity)) return false;
+    if (kind === 'combo'  && !FILTER.includeCombo)  return false;
+    if (kind === 'final'  && !FILTER.includeFusion) return false;
+    return true;
+}
+
+function _sortLibrary(rows) {
+    const sort = FILTER.sort;
+    if (sort === 'az')      return [...rows].sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === 'za')      return [...rows].sort((a, b) => b.name.localeCompare(a.name));
+    if (sort === 'newest')  return [...rows].sort((a, b) => (b.added_at || 0) - (a.added_at || 0));
+    if (sort === 'oldest')  return [...rows].sort((a, b) => (a.added_at || 0) - (b.added_at || 0));
+    if (sort === 'rarity') {
+        return [...rows].sort((a, b) => {
+            const ra = RARITY_RANK[(getCard(a.name) || {}).rarity] ?? -1;
+            const rb = RARITY_RANK[(getCard(b.name) || {}).rarity] ?? -1;
+            return (rb - ra) || a.name.localeCompare(b.name);
+        });
+    }
+    if (sort === 'deck-first') {
+        const deckNames = new Set(STATE.deck.filter(Boolean).map((c) => c.name));
+        return [...rows].sort((a, b) => {
+            const aIn = deckNames.has(a.name) ? 0 : 1;
+            const bIn = deckNames.has(b.name) ? 0 : 1;
+            return (aIn - bIn) || a.name.localeCompare(b.name);
+        });
+    }
+    if (sort === 'suggested') {
+        const deckKeys = STATE.deck.filter(Boolean).map((c) => _cardKey(c));
+        const ranked = rankSuggestions(STATE.comboDict, STATE.library, deckKeys, STATE.settings);
+        const rankByKey = {};
+        ranked.forEach(([k], i) => { rankByKey[k] = i; });
+        return [...rows].sort((a, b) => {
+            const ra = rankByKey[_cardKey(a)] ?? Infinity;
+            const rb = rankByKey[_cardKey(b)] ?? Infinity;
+            return (ra - rb) || a.name.localeCompare(b.name);
+        });
+    }
+    return [...rows].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -101,6 +183,10 @@ function _loadFromStorage() {
         const lib = localStorage.getItem('la_library');
         if (lib) STATE.library = JSON.parse(lib);
     } catch { /* ignore */ }
+    // Phase 2A: ensure every entry has an added_at timestamp (legacy entries → 0).
+    for (const c of STATE.library) {
+        if (typeof c.added_at !== 'number') c.added_at = 0;
+    }
     try {
         const s = localStorage.getItem('la_settings');
         if (s) Object.assign(STATE.settings, JSON.parse(s));
@@ -193,16 +279,8 @@ function _bindEvents() {
     });
     document.getElementById('input-import-library').addEventListener('change', _importLibrary);
 
-    // Library table header sorting
-    document.querySelectorAll('#lib-table thead th').forEach(th => {
-        th.addEventListener('click', () => {
-            const col = th.dataset.col;
-            if (!col) return;
-            if (_libSortCol === col) _libSortAsc = !_libSortAsc;
-            else { _libSortCol = col; _libSortAsc = true; }
-            refreshLibrary();
-        });
-    });
+    // (Library table header sorting removed in Phase 2 — list now uses
+    //  card-row layout with no sort headers. Re-add as a dropdown in Phase 4.)
 
     // Deck table header sorting
     document.querySelectorAll('#deck-table thead th').forEach(th => {
@@ -295,8 +373,8 @@ function _bindEvents() {
         }
     });
 
-    // Double-click library to edit
-    document.getElementById('lib-tbody').addEventListener('dblclick', () => _editCard());
+    // (Double-click library to edit removed in Phase 2 — inline editing
+    //  replaces the modal-based edit flow.)
 
     // Double-click leaderboard to load
     document.getElementById('lb-tbody').addEventListener('dblclick', () => _loadLbDeck());
@@ -418,14 +496,84 @@ async function _enterApp() {
 
 // ── Phase 2 library UI wiring ────────────────────────────────────────────────
 let _librarySearchReady = false;
+let _librarySearch = null;
 function _initLibraryUI() {
     if (_librarySearchReady) return;
     _librarySearchReady = true;
-    createLibrarySearch({
+    _loadFilterSort();
+
+    _librarySearch = createLibrarySearch({
         input: document.getElementById('lib-search'),
         resultsHost: document.getElementById('lib-search-results'),
+        passesFilter: _passesFilter,
         getOwnedCount: (name) => STATE.library.filter((c) => c.name === name).reduce((n, c) => n + c.quantity, 0),
         onPick: _addOrIncrementFromSearch,
+    });
+
+    _buildKindToggles();
+    _buildRarityChips();
+    _wireSortDropdown();
+}
+
+function _onFiltersChanged() {
+    _saveFilterSort();
+    refreshLibrary();
+    if (_librarySearch) _librarySearch.refresh();
+}
+
+function _buildKindToggles() {
+    const host = document.getElementById('lib-search-filters');
+    host.innerHTML = '';
+    const mk = (key, label, stateKey) => {
+        const wrap = document.createElement('label');
+        wrap.className = 'search-filter';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = FILTER[stateKey];
+        cb.addEventListener('change', () => { FILTER[stateKey] = cb.checked; _onFiltersChanged(); });
+        wrap.appendChild(cb);
+        const text = document.createElement('span');
+        text.textContent = label;
+        wrap.appendChild(text);
+        return wrap;
+    };
+    host.appendChild(mk('combo', 'Include combos', 'includeCombo'));
+    host.appendChild(mk('fusion', 'Include final forms', 'includeFusion'));
+}
+
+function _buildRarityChips() {
+    const host = document.getElementById('rarity-chips');
+    host.innerHTML = '';
+    const label = document.createElement('span');
+    label.className = 'rarity-chips__label';
+    label.textContent = 'Rarity:';
+    host.appendChild(label);
+    for (const rarity of RARITIES) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = `rarity-chip rarity-chip--${rarity.toLowerCase()}`;
+        chip.textContent = rarity[0];
+        chip.title = rarity;
+        chip.setAttribute('aria-pressed', FILTER.rarities.has(rarity) ? 'true' : 'false');
+        if (!FILTER.rarities.has(rarity)) chip.classList.add('rarity-chip--off');
+        chip.addEventListener('click', () => {
+            if (FILTER.rarities.has(rarity)) FILTER.rarities.delete(rarity);
+            else FILTER.rarities.add(rarity);
+            chip.classList.toggle('rarity-chip--off', !FILTER.rarities.has(rarity));
+            chip.setAttribute('aria-pressed', FILTER.rarities.has(rarity) ? 'true' : 'false');
+            _onFiltersChanged();
+        });
+        host.appendChild(chip);
+    }
+}
+
+function _wireSortDropdown() {
+    const sel = document.getElementById('lib-sort');
+    sel.value = FILTER.sort;
+    sel.addEventListener('change', () => {
+        FILTER.sort = sel.value;
+        _saveFilterSort();
+        refreshLibrary();
     });
 }
 
@@ -462,7 +610,7 @@ function _addOrIncrementFromSearch(name) {
         });
     } else {
         const id = STATE.comboNameToId[name] || STATE.nameToId[name] || 0;
-        const newCard = { name, level: 1, fused: false, onyx: false, quantity: 1, id };
+        const newCard = { name, level: 1, fused: false, onyx: false, quantity: 1, id, added_at: Date.now() };
         STATE.library.push(newCard);
         STATE.library.sort((a, b) => a.name.localeCompare(b.name));
         _persistLibrary();
@@ -513,7 +661,10 @@ function refreshLibrary() {
     if (!list) return;
     list.innerHTML = '';
 
-    // Recently Added section — only when there's any in-session add history
+    const filtered = STATE.library.filter((c) => _passesFilter(c.name));
+    const sorted = _sortLibrary(filtered);
+
+    // Recently Added section — in-session memory, ignores sort/filter
     if (_recentlyAdded.length > 0) {
         const title = document.createElement('div');
         title.className = 'lib-section-title';
@@ -524,12 +675,19 @@ function refreshLibrary() {
         }
         const allTitle = document.createElement('div');
         allTitle.className = 'lib-section-title';
-        allTitle.textContent = `All cards (${STATE.library.length})`;
+        allTitle.textContent = `All cards (${sorted.length}${sorted.length !== STATE.library.length ? ` of ${STATE.library.length}` : ''})`;
         list.appendChild(allTitle);
     }
 
-    const rows = STATE.library.slice().sort((a, b) => a.name.localeCompare(b.name));
-    for (const card of rows) {
+    if (sorted.length === 0 && _recentlyAdded.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'lib-empty';
+        empty.textContent = STATE.library.length === 0
+            ? 'Add your first card with the search bar above.'
+            : 'No cards match the current filter.';
+        list.appendChild(empty);
+    }
+    for (const card of sorted) {
         list.appendChild(_makeLibraryRow(card));
     }
 }

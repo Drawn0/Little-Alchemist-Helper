@@ -2,6 +2,7 @@ import { createCardThumbnail } from './card_thumbnail.js';
 import { createSegmentedLevel } from './segmented_level.js';
 import { createToggle } from './toggle.js';
 import { createQuantityControls } from './quantity_controls.js';
+import { getCard } from '../util/card_data.js';
 
 /**
  * Library row. Compact: thumbnail + name + qty +/- + delete.
@@ -12,8 +13,10 @@ import { createQuantityControls } from './quantity_controls.js';
  * Each receives only the new value; the caller mutates state + persists.
  */
 export function createLibraryRow(card, callbacks = {}) {
+    const info = getCard(card.name) || {};
     const root = document.createElement('div');
     root.className = 'lib-row';
+    if (info.rarity) root.classList.add(`lib-row--${info.rarity.toLowerCase()}`);
     root.dataset.cardKey = `${card.name}|${card.fused ? 1 : 0}|${card.onyx ? 1 : 0}`;
 
     // ── Compact line: tappable name area + qty + delete ───────────────────────
@@ -34,10 +37,19 @@ export function createLibraryRow(card, callbacks = {}) {
     });
     nameArea.appendChild(thumb);
 
+    const nameBlock = document.createElement('span');
+    nameBlock.className = 'lib-row__name-block';
     const nameText = document.createElement('span');
     nameText.className = 'lib-row__name-text';
     nameText.textContent = card.name + (card.onyx ? ' ◊' : '');
-    nameArea.appendChild(nameText);
+    nameBlock.appendChild(nameText);
+    if (info.base_attack != null || info.base_defense != null) {
+        const stats = document.createElement('span');
+        stats.className = 'lib-row__stats';
+        stats.textContent = `${info.base_attack ?? '?'} / ${info.base_defense ?? '?'}`;
+        nameBlock.appendChild(stats);
+    }
+    nameArea.appendChild(nameBlock);
     main.appendChild(nameArea);
 
     const qty = createQuantityControls({

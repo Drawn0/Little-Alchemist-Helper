@@ -1,12 +1,15 @@
 """
 Generates app/card_data.json and app/pack_data.json by joining
-Fun-Game-Dev's AlchemyCardData.json with MORGANlTE's SQLite database.
+Fun-Game-Dev's AlchemyCardData.json with MORGANlTE's SQLite database
+and classifying each card as base / combo intermediate / final form
+using combo_data.json.
 
 Run from project root:
     python3 scripts/enrich_card_data.py
 
 Inputs:
     app/AlchemyCardData.json
+    app/combo_data.json
     ../lar-helper-starter-4/assets/morganite_card_database.db
 
 Outputs (committed):
@@ -21,11 +24,32 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ALCHEMY = ROOT / "app" / "AlchemyCardData.json"
+COMBO = ROOT / "app" / "combo_data.json"
 MORGANITE = ROOT.parent / "lar-helper-starter-4" / "assets" / "morganite_card_database.db"
 OUT_CARDS = ROOT / "app" / "card_data.json"
 OUT_PACKS = ROOT / "app" / "pack_data.json"
 
-WIKI_URL = "https://lil-alchemist.fandom.com/wiki/Special:FilePath/{}.png"
+
+def classify_kinds(combo_json):
+    """Returns {name: 'base'|'combo'|'final'} per combo participation.
+
+    base   — appears as card_a/card_b but never as result   (can be obtained directly)
+    final  — appears as result but never as ingredient      (terminal form)
+    combo  — appears as both                                (intermediate)
+    """
+    combos = combo_json.get("combos", {}) if combo_json else {}
+    ingredients = set()
+    results = set()
+    for c in combos.values():
+        if c.get("card_a"): ingredients.add(c["card_a"])
+        if c.get("card_b"): ingredients.add(c["card_b"])
+        if c.get("result"): results.add(c["result"])
+    kinds = {}
+    for name in ingredients | results:
+        is_ing = name in ingredients
+        is_res = name in results
+        kinds[name] = "combo" if (is_ing and is_res) else ("final" if is_res else "base")
+    return kinds
 
 
 def main():
@@ -35,16 +59,26 @@ def main():
         sys.exit(f"Missing {MORGANITE}")
 
     alchemy = json.loads(ALCHEMY.read_text())
+    combo_json = json.loads(COMBO.read_text()) if COMBO.exists() else {}
+    kinds = classify_kinds(combo_json)
 
     conn = sqlite3.connect(MORGANITE)
     conn.row_factory = sqlite3.Row
 
-    morg_by_name = {row["name"]: row for row in conn.execute("SELECT * FROM cards")}
+    # Index MORGANlTE by EXACT and lowercased name for fuzzy join with Fun-Game-Dev.
+    morg_by_name = {}
+    morg_by_lower = {}
+    for row in conn.execute("SELECT * FROM cards"):
+        morg_by_name[row["name"]] = row
+        morg_by_lower[row["name"].lower()] = row
+
+    def lookup_morg(name):
+        return morg_by_name.get(name) or morg_by_lower.get(name.lower())
 
     cards = {}
     matched = 0
     for name, fgd in alchemy.items():
-        morg = morg_by_name.get(name)
+        morg = lookup_morg(name)
         if morg:
             matched += 1
             image_url = morg["image_url"]
@@ -54,8 +88,9 @@ def main():
             base_attack = morg["base_attack"] if morg["base_attack"] is not None else fgd.get("Attack")
             base_defense = morg["base_defense"] if morg["base_defense"] is not None else fgd.get("Defense")
         else:
-            picture = fgd.get("Picture") or name.replace(" ", "_")
-            image_url = WIKI_URL.format(picture)
+            # No constructed-URL fallback — caller renders a rarity-tinted
+            # placeholder for null image_url. Avoids noisy 404s.
+            image_url = None
             description = fgd.get("Description") or ""
             fusion_ability = fgd.get("FusionAbility") or ""
             rarity = fgd.get("Rarity") or ""
@@ -71,12 +106,13 @@ def main():
             "is_seasonal": fgd.get("isSeasonal") or None,
             "base_attack": base_attack,
             "base_defense": base_defense,
+            "card_kind": kinds.get(name, "base"),
         }
 
     # Include MORGANlTE-only cards (so pack contents always have thumbnails)
     morg_only = 0
     for name, morg in morg_by_name.items():
-        if name in cards:
+        if name in cards or name.lower() in {k.lower() for k in cards}:
             continue
         morg_only += 1
         cards[name] = {
@@ -88,6 +124,7 @@ def main():
             "is_seasonal": None,
             "base_attack": morg["base_attack"],
             "base_defense": morg["base_defense"],
+            "card_kind": kinds.get(name, "base"),
         }
 
     packs = []
@@ -109,7 +146,13 @@ def main():
     OUT_CARDS.write_text(json.dumps(cards, indent=2, sort_keys=True))
     OUT_PACKS.write_text(json.dumps(packs, indent=2))
 
-    print(f"card_data.json:  {len(cards)} cards ({matched} matched both sources, {morg_only} MORGANlTE-only)")
+    kind_counts = {"base": 0, "combo": 0, "final": 0}
+    for c in cards.values():
+        kind_counts[c.get("card_kind", "base")] = kind_counts.get(c.get("card_kind", "base"), 0) + 1
+    missing_img = sum(1 for c in cards.values() if not c["image_url"])
+    print(f"card_data.json:  {len(cards)} cards ({matched} matched FGD+MORGANlTE, {morg_only} MORGANlTE-only)")
+    print(f"  by kind:      base={kind_counts['base']} combo={kind_counts['combo']} final={kind_counts['final']}")
+    print(f"  no image:     {missing_img} (will render placeholder)")
     print(f"pack_data.json:  {len(packs)} packs")
     print(f"Wrote {OUT_CARDS}")
     print(f"Wrote {OUT_PACKS}")
