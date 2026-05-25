@@ -114,7 +114,7 @@ export function applyImportedLibrary(stateLibrary, parsed, strategy, comboNameTo
     let added = 0, merged = 0, skipped = 0, duplicated = 0;
     for (const imp of parsed) {
         const match = stateLibrary.find(
-            (c) => c.name === imp.name && !!c.fused === imp.fused && !!c.onyx === imp.onyx,
+            (c) => c.name === imp.name && c.level === imp.level && !!c.fused === imp.fused && !!c.onyx === imp.onyx,
         );
         if (match) {
             if (strategy === 'skip') { skipped++; continue; }

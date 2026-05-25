@@ -21,6 +21,9 @@ import { initChangeCardModal, openChangeCardModal } from './components/change_ca
 
 // Phase 2: in-session memory for "Recently Added" section (newest first).
 const _recentlyAdded = [];
+// Card key of the library row currently expanded inline (so a re-render after
+// an inline edit keeps that row open instead of snapping shut).
+let _expandedKey = null;
 function _pushRecent(name) {
     const idx = _recentlyAdded.indexOf(name);
     if (idx >= 0) _recentlyAdded.splice(idx, 1);
@@ -163,7 +166,7 @@ const STATE = {
 };
 
 // Composite card key: distinguishes plain / fused / onyx variants of the same name
-function _cardKey(c) { return c.name + '|' + (c.fused ? '1' : '0') + '|' + (c.onyx ? '1' : '0'); }
+function _cardKey(c) { return c.name + '|' + (c.level ?? '') + '|' + (c.fused ? '1' : '0') + '|' + (c.onyx ? '1' : '0'); }
 function _nameFromKey(k) { return k ? k.split('|')[0] : ''; }
 function _dispName(c) { return c && c.name ? c.name + (c.onyx ? ' (Onyx)' : '') : ''; }
 
@@ -681,8 +684,12 @@ function _libIndexOfKey(key) {
     return STATE.library.findIndex((c) => `${c.name}|${c.fused ? 1 : 0}|${c.onyx ? 1 : 0}` === key);
 }
 
-function _findEntry(name, { fused = false, onyx = false } = {}) {
-    return STATE.library.find((c) => c.name === name && !!c.fused === fused && !!c.onyx === onyx);
+function _findEntry(name, { level = null, fused = false, onyx = false } = {}) {
+    return STATE.library.find((c) =>
+        c.name === name
+        && (level === null || c.level === level)
+        && !!c.fused === fused
+        && !!c.onyx === onyx);
 }
 
 function _persistLibrary() {
@@ -694,7 +701,10 @@ function _addOrIncrementFromSearch(name) {
         showToast(`Unknown card: ${name}`);
         return;
     }
-    const existing = _findEntry(name, { fused: false, onyx: false });
+    // New adds default to Lv 1 / unfused / no-onyx; match that exact identity
+    // so a fresh add increments only an existing Lv1 base entry (an existing
+    // Arachnid Lv5 is a different row and is left alone).
+    const existing = _findEntry(name, { level: 1, fused: false, onyx: false });
     if (existing) {
         const prevQty = existing.quantity;
         existing.quantity = prevQty + 1;
@@ -702,7 +712,7 @@ function _addOrIncrementFromSearch(name) {
         _refreshAfterLibraryMutation();
         showToast(`${name}: ×${existing.quantity}`);
         recordUndo(`+1 ${name}`, () => {
-            const e = _findEntry(name, { fused: false, onyx: false });
+            const e = _findEntry(name, { level: 1, fused: false, onyx: false });
             if (!e) return;
             e.quantity = prevQty;
             _persistLibrary();
@@ -738,7 +748,8 @@ function _bulkAddFromPack(cards) {
     let added = 0;
     let incremented = 0;
     for (const { name, onyx } of cards) {
-        const existing = _findEntry(name, { fused: false, onyx });
+        // Pack pulls come in at Lv 1 / unfused; match that exact identity.
+        const existing = _findEntry(name, { level: 1, fused: false, onyx });
         if (existing) {
             existing.quantity += 1;
             incremented++;
@@ -826,30 +837,19 @@ function refreshLibrary() {
 
 function _makeLibraryRow(card) {
     return createLibraryRow(card, {
-        onChangeLevel: (v) => {
-            const prev = card.level;
-            card.level = v;
-            _persistLibrary();
-            refreshSuggestions(); refreshScore();
-            showToast(`${card.name}: Lv ${v}`);
-            recordUndo(`Level ${card.name} → ${prev}`, () => {
-                const ref = _findEntry(card.name, { fused: card.fused, onyx: card.onyx });
-                if (!ref) return;
-                ref.level = prev;
-                _persistLibrary(); refreshLibrary(); refreshSuggestions(); refreshScore();
-            });
-        },
-        onChangeFused: (v) => _toggleFlagSafely(card, 'fused', v),
-        onChangeOnyx:  (v) => _toggleFlagSafely(card, 'onyx', v),
+        startExpanded: _expandedKey === _cardKey(card),
+        onToggleExpand: (isOpen) => { _expandedKey = isOpen ? _cardKey(card) : null; },
+        onChangeLevel: (v) => _applyIdentityChange(card, { level: v }, `Lv ${v}`),
+        onChangeFused: (v) => _applyIdentityChange(card, { fused: v }, `fused ${v ? 'on' : 'off'}`),
+        onChangeOnyx:  (v) => _applyIdentityChange(card, { onyx: v }, `onyx ${v ? 'on' : 'off'}`),
         onChangeQty: (v) => {
             const prev = card.quantity;
+            if (v === prev) return;
             card.quantity = v;
             _persistLibrary();
             refreshSuggestions(); refreshScore();
             recordUndo(`Qty ${card.name} → ${prev}`, () => {
-                const ref = _findEntry(card.name, { fused: card.fused, onyx: card.onyx });
-                if (!ref) return;
-                ref.quantity = prev;
+                card.quantity = prev;
                 _persistLibrary(); refreshLibrary(); refreshSuggestions(); refreshScore();
             });
         },
@@ -857,6 +857,7 @@ function _makeLibraryRow(card) {
             const idx = STATE.library.indexOf(card);
             if (idx < 0) return;
             const removed = STATE.library.splice(idx, 1)[0];
+            if (_expandedKey === _cardKey(card)) _expandedKey = null;
             _persistLibrary();
             _refreshAfterLibraryMutation();
             showToast(`Removed ${card.name}`);
@@ -877,6 +878,50 @@ function _makeLibraryRow(card) {
     });
 }
 
+/**
+ * Apply a level/fused/onyx change to a library entry. If the change collides
+ * with an existing entry (same name + level + fused + onyx), merge quantities
+ * into that entry and drop this row. Keeps the row's expand state pinned to the
+ * surviving entry so inline edits don't snap the row shut. Single undo unit.
+ */
+function _applyIdentityChange(card, changes, label) {
+    const target = {
+        name: card.name,
+        level: changes.level ?? card.level,
+        fused: changes.fused ?? card.fused,
+        onyx: changes.onyx ?? card.onyx,
+    };
+    const snapshot = STATE.library.map((c) => ({ ...c }));
+    const collision = STATE.library.find((c) =>
+        c !== card
+        && c.name === target.name
+        && c.level === target.level
+        && !!c.fused === !!target.fused
+        && !!c.onyx === !!target.onyx);
+
+    if (collision) {
+        collision.quantity += card.quantity;
+        const idx = STATE.library.indexOf(card);
+        STATE.library.splice(idx, 1);
+        _expandedKey = _cardKey(collision);
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+        showToast(`Merged into existing ${card.name}`);
+    } else {
+        Object.assign(card, changes);
+        _expandedKey = _cardKey(card);   // follow the row to its new key
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+        showToast(`${card.name}: ${label}`);
+    }
+    recordUndo(`undo ${label} on ${card.name}`, () => {
+        STATE.library.length = 0;
+        for (const c of snapshot) STATE.library.push(c);
+        _persistLibrary();
+        _refreshAfterLibraryMutation();
+    });
+}
+
 function _renameLibraryCard(card, newName) {
     if (newName === card.name) return;
     const idx = STATE.library.indexOf(card);
@@ -884,10 +929,10 @@ function _renameLibraryCard(card, newName) {
     const oldName = card.name;
     const snapshot = STATE.library.map((c) => ({ ...c }));
 
-    // Collision: if another row already represents (newName, fused, onyx),
-    // merge this row's quantity into it and remove this row.
+    // Collision: if another row already represents (newName, level, fused,
+    // onyx), merge this row's quantity into it and remove this row.
     const collision = STATE.library.find(
-        (c) => c !== card && c.name === newName && !!c.fused === !!card.fused && !!c.onyx === !!card.onyx,
+        (c) => c !== card && c.name === newName && c.level === card.level && !!c.fused === !!card.fused && !!c.onyx === !!card.onyx,
     );
     if (collision) {
         collision.quantity += card.quantity;
@@ -903,37 +948,6 @@ function _renameLibraryCard(card, newName) {
     recordUndo(`rename ${oldName} → ${newName}`, () => {
         STATE.library.length = 0;
         for (const c of snapshot) STATE.library.push(c);
-        _persistLibrary(); _refreshAfterLibraryMutation();
-    });
-}
-
-function _toggleFlagSafely(card, flag, value) {
-    const target = { fused: card.fused, onyx: card.onyx };
-    target[flag] = value;
-    const collision = STATE.library.find((c) => c !== card && c.name === card.name && !!c.fused === target.fused && !!c.onyx === target.onyx);
-    if (collision) {
-        // Merge: fold this row's quantity into the collision entry and remove this row.
-        const prevQty = collision.quantity;
-        const myIdx = STATE.library.indexOf(card);
-        collision.quantity += card.quantity;
-        STATE.library.splice(myIdx, 1);
-        _persistLibrary(); _refreshAfterLibraryMutation();
-        showToast(`Merged into existing ${card.name}`);
-        recordUndo(`Un-merge ${card.name}`, () => {
-            collision.quantity = prevQty;
-            STATE.library.splice(myIdx, 0, { ...card });
-            _persistLibrary(); _refreshAfterLibraryMutation();
-        });
-        return;
-    }
-    const prev = card[flag];
-    card[flag] = value;
-    _persistLibrary(); _refreshAfterLibraryMutation();
-    showToast(`${card.name}: ${flag} ${value ? 'on' : 'off'}`);
-    recordUndo(`${flag} ${card.name} → ${prev ? 'on' : 'off'}`, () => {
-        const ref = STATE.library.find((c) => c.name === card.name && c.quantity === card.quantity);
-        if (!ref) return;
-        ref[flag] = prev;
         _persistLibrary(); _refreshAfterLibraryMutation();
     });
 }

@@ -130,20 +130,24 @@ export function createLibraryRow(card, callbacks = {}) {
     panel.appendChild(changeBtn);
     root.appendChild(panel);
 
-    nameArea.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const next = panel.hidden;
+    function setExpanded(next) {
         panel.hidden = !next;
         root.classList.toggle('lib-row--expanded', next);
         nameArea.setAttribute('aria-expanded', String(next));
+        if (callbacks.onToggleExpand) callbacks.onToggleExpand(next);
+    }
+
+    // Honor initial expanded state (so a re-render after an inline edit keeps
+    // the row open instead of snapping shut).
+    if (callbacks.startExpanded) setExpanded(true);
+
+    nameArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setExpanded(panel.hidden);
     });
 
     // Expose collapse for outside-click handler
-    root.collapse = () => {
-        panel.hidden = true;
-        root.classList.remove('lib-row--expanded');
-        nameArea.setAttribute('aria-expanded', 'false');
-    };
+    root.collapse = () => setExpanded(false);
     root.setQuantityDisplay = (v) => qty.setValue(v);
     return root;
 }

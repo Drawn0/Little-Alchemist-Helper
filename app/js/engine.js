@@ -643,8 +643,9 @@ export function buildNameMaxQty(library) {
     return map;
 }
 
-/** Composite card key used in deck arrays. */
-function _ck(c) { return c.name + '|' + (c.fused ? '1' : '0') + '|' + (c.onyx ? '1' : '0'); }
+/** Composite card key used in deck arrays. Includes level so the same card at
+ *  different levels (e.g. Arachnid Lv5 vs Lv1) is treated as a distinct entry. */
+function _ck(c) { return c.name + '|' + (c.level ?? '') + '|' + (c.fused ? '1' : '0') + '|' + (c.onyx ? '1' : '0'); }
 
 /** Default settings object. */
 export function defaultSettings() {
