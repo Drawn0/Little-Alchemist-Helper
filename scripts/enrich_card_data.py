@@ -25,31 +25,32 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ALCHEMY = ROOT / "app" / "AlchemyCardData.json"
 COMBO = ROOT / "app" / "combo_data.json"
-MORGANITE = ROOT.parent / "lar-helper-starter-4" / "assets" / "morganite_card_database.db"
+MORGANITE = ROOT.parent / "lar-helper-starter-5" / "assets" / "morganite_card_database.db"
 OUT_CARDS = ROOT / "app" / "card_data.json"
 OUT_PACKS = ROOT / "app" / "pack_data.json"
 
 
-def classify_kinds(combo_json):
-    """Returns {name: 'base'|'combo'|'final'} per combo participation.
+def classify_flags(alchemy, combo_json):
+    """Multi-flag classification per card. A card may be BOTH combo and final
+    (e.g., Death, Wizard — intermediate cards that fuse further).
 
-    base   — appears as card_a/card_b but never as result   (can be obtained directly)
-    final  — appears as result but never as ingredient      (terminal form)
-    combo  — appears as both                                (intermediate)
+    is_combo — card has Combinations entries in AlchemyCardData (it can be
+               used as an ingredient to fuse OTHER cards). 139 cards.
+    is_final — card appears as the `result` of any combo in combo_data
+               (it is itself produced by fusion). 1,406 cards.
+
+    A card that is neither is a "base" / standalone card (no fusion role).
     """
     combos = combo_json.get("combos", {}) if combo_json else {}
-    ingredients = set()
-    results = set()
-    for c in combos.values():
-        if c.get("card_a"): ingredients.add(c["card_a"])
-        if c.get("card_b"): ingredients.add(c["card_b"])
-        if c.get("result"): results.add(c["result"])
-    kinds = {}
-    for name in ingredients | results:
-        is_ing = name in ingredients
-        is_res = name in results
-        kinds[name] = "combo" if (is_ing and is_res) else ("final" if is_res else "base")
-    return kinds
+    results = {c["result"] for c in combos.values() if c.get("result")}
+    flags = {}
+    for name, info in alchemy.items():
+        flags[name] = {
+            "is_combo": bool(info.get("Combinations")),
+            "is_final": name in results,
+        }
+    # Cards that exist only in MORGANlTE (not in AlchemyCardData) get filled in by caller.
+    return flags
 
 
 def main():
@@ -60,7 +61,7 @@ def main():
 
     alchemy = json.loads(ALCHEMY.read_text())
     combo_json = json.loads(COMBO.read_text()) if COMBO.exists() else {}
-    kinds = classify_kinds(combo_json)
+    flags = classify_flags(alchemy, combo_json)
 
     conn = sqlite3.connect(MORGANITE)
     conn.row_factory = sqlite3.Row
@@ -106,7 +107,8 @@ def main():
             "is_seasonal": fgd.get("isSeasonal") or None,
             "base_attack": base_attack,
             "base_defense": base_defense,
-            "card_kind": kinds.get(name, "base"),
+            "is_combo": flags.get(name, {}).get("is_combo", False),
+            "is_final": flags.get(name, {}).get("is_final", False),
         }
 
     # Include MORGANlTE-only cards (so pack contents always have thumbnails)
@@ -124,7 +126,8 @@ def main():
             "is_seasonal": None,
             "base_attack": morg["base_attack"],
             "base_defense": morg["base_defense"],
-            "card_kind": kinds.get(name, "base"),
+            "is_combo": flags.get(name, {}).get("is_combo", False),
+            "is_final": flags.get(name, {}).get("is_final", False),
         }
 
     # MORGANlTE has many duplicate pack entries (same name + identical cards).
@@ -174,12 +177,13 @@ def main():
     OUT_CARDS.write_text(json.dumps(cards, indent=2, sort_keys=True))
     OUT_PACKS.write_text(json.dumps(packs, indent=2))
 
-    kind_counts = {"base": 0, "combo": 0, "final": 0}
-    for c in cards.values():
-        kind_counts[c.get("card_kind", "base")] = kind_counts.get(c.get("card_kind", "base"), 0) + 1
+    n_combo = sum(1 for c in cards.values() if c.get("is_combo"))
+    n_final = sum(1 for c in cards.values() if c.get("is_final"))
+    n_both = sum(1 for c in cards.values() if c.get("is_combo") and c.get("is_final"))
+    n_base = sum(1 for c in cards.values() if not c.get("is_combo") and not c.get("is_final"))
     missing_img = sum(1 for c in cards.values() if not c["image_url"])
     print(f"card_data.json:  {len(cards)} cards ({matched} matched FGD+MORGANlTE, {morg_only} MORGANlTE-only)")
-    print(f"  by kind:      base={kind_counts['base']} combo={kind_counts['combo']} final={kind_counts['final']}")
+    print(f"  by flags:     base-only={n_base}  is_combo={n_combo}  is_final={n_final}  (both={n_both})")
     print(f"  no image:     {missing_img} (will render placeholder)")
     print(f"pack_data.json:  {len(packs)} packs")
     print(f"Wrote {OUT_CARDS}")

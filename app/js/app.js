@@ -59,18 +59,22 @@ function _saveFilterSort() {
     } catch { /* ignore */ }
 }
 
-/** Returns true if a card name should appear under the current filter. */
+/** Returns true if a card name should appear under the current filter.
+ *  Three-way kind:
+ *   - base: not combo AND not final → always visible (default category)
+ *   - combo: has Combinations entries → visible only when Include combos ticked
+ *   - final: appears as combo result → visible only when Include final forms ticked
+ *  A card flagged as BOTH combo AND final appears when EITHER toggle is on. */
 function _passesFilter(name) {
     const info = getCard(name);
     const rarity = (info && info.rarity) || '';
-    const kind = (info && info.card_kind) || 'base';
-    // If rarity is unknown, only filter it out when the user has explicitly
-    // turned off all rarities; otherwise show (avoid hiding the MORGANlTE-only
-    // tail).
     if (rarity && !FILTER.rarities.has(rarity)) return false;
-    if (kind === 'combo'  && !FILTER.includeCombo)  return false;
-    if (kind === 'final'  && !FILTER.includeFusion) return false;
-    return true;
+    const isCombo = !!(info && info.is_combo);
+    const isFinal = !!(info && info.is_final);
+    if (!isCombo && !isFinal) return true;  // base — always visible
+    if (isCombo && FILTER.includeCombo) return true;
+    if (isFinal && FILTER.includeFusion) return true;
+    return false;
 }
 
 function _sortLibrary(rows) {

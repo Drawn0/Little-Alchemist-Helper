@@ -62,12 +62,18 @@ export function createLibrarySearch({ input, resultsHost, passesFilter, getOwned
             label.textContent = name;
             row.appendChild(label);
 
-            const kind = (getCard(name) || {}).card_kind || 'base';
-            if (kind !== 'base') {
-                const kindBadge = document.createElement('span');
-                kindBadge.className = `search-result__kind search-result__kind--${kind}`;
-                kindBadge.textContent = kind === 'combo' ? 'combo' : 'final';
-                row.appendChild(kindBadge);
+            const info = getCard(name) || {};
+            if (info.is_combo) {
+                const b = document.createElement('span');
+                b.className = 'search-result__kind search-result__kind--combo';
+                b.textContent = 'combo';
+                row.appendChild(b);
+            }
+            if (info.is_final) {
+                const b = document.createElement('span');
+                b.className = 'search-result__kind search-result__kind--final';
+                b.textContent = 'final';
+                row.appendChild(b);
             }
 
             const owned = getOwnedCount ? getOwnedCount(name) : 0;

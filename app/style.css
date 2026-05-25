@@ -1130,6 +1130,18 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
     opacity: 0.7;
 }
 .lib-row__stat-sep { opacity: 0.4; padding: 0 2px; }
+.lib-row__kind {
+    font-size: 9px;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    vertical-align: middle;
+}
+.lib-row__kind--combo { background: #6c7086; color: #fff; }
+.lib-row__kind--final { background: #5b4380; color: #cdd6f4; }
 .lib-row--bronze  { border-left: 4px solid #a07040; }
 .lib-row--silver  { border-left: 4px solid #bbbbc0; }
 .lib-row--gold    { border-left: 4px solid #d4a93a; }

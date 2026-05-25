@@ -47,6 +47,18 @@ export function createLibraryRow(card, callbacks = {}) {
         const stats = document.createElement('span');
         stats.className = 'lib-row__stats';
         stats.innerHTML = `<span class="lib-row__stat-key">ATK</span> ${info.base_attack ?? '?'} <span class="lib-row__stat-sep">·</span> <span class="lib-row__stat-key">DEF</span> ${info.base_defense ?? '?'}`;
+        if (info.is_combo) {
+            const b = document.createElement('span');
+            b.className = 'lib-row__kind lib-row__kind--combo';
+            b.textContent = 'combo';
+            stats.appendChild(b);
+        }
+        if (info.is_final) {
+            const b = document.createElement('span');
+            b.className = 'lib-row__kind lib-row__kind--final';
+            b.textContent = 'final';
+            stats.appendChild(b);
+        }
         nameBlock.appendChild(stats);
     }
     nameArea.appendChild(nameBlock);
