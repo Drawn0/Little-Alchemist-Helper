@@ -17,6 +17,7 @@ import { createCardThumbnail } from './components/card_thumbnail.js';
 import { loadPackData } from './util/pack_data.js';
 import { initPackPicker, openPackPicker } from './components/pack_picker.js';
 import { initImportModal, openImportModal, applyImportedLibrary } from './components/import_modal.js';
+import { initChangeCardModal, openChangeCardModal } from './components/change_card_modal.js';
 
 // Phase 2: in-session memory for "Recently Added" section (newest first).
 const _recentlyAdded = [];
@@ -519,6 +520,7 @@ async function _enterApp() {
     _initLibraryUI();
     initPackPicker({ openModal: _openModal, closeModal: _closeModal });
     initImportModal({ openModal: _openModal, closeModal: _closeModal });
+    initChangeCardModal({ openModal: _openModal, closeModal: _closeModal });
     _refreshAll();
     setStatus('Loaded ' + Object.keys(STATE.comboDict).length.toLocaleString() + ' combinations  |  ' + STATE.library.length + ' cards in library');
 }
@@ -794,6 +796,42 @@ function _makeLibraryRow(card) {
                 _persistLibrary(); _refreshAfterLibraryMutation();
             });
         },
+        onChangeCard: () => {
+            openChangeCardModal({
+                currentCard: card,
+                onPick: (newName) => _renameLibraryCard(card, newName),
+            });
+        },
+    });
+}
+
+function _renameLibraryCard(card, newName) {
+    if (newName === card.name) return;
+    const idx = STATE.library.indexOf(card);
+    if (idx < 0) return;
+    const oldName = card.name;
+    const snapshot = STATE.library.map((c) => ({ ...c }));
+
+    // Collision: if another row already represents (newName, fused, onyx),
+    // merge this row's quantity into it and remove this row.
+    const collision = STATE.library.find(
+        (c) => c !== card && c.name === newName && !!c.fused === !!card.fused && !!c.onyx === !!card.onyx,
+    );
+    if (collision) {
+        collision.quantity += card.quantity;
+        STATE.library.splice(idx, 1);
+    } else {
+        card.name = newName;
+        card.id = STATE.comboNameToId[newName] || STATE.nameToId[newName] || 0;
+    }
+    STATE.library.sort((a, b) => a.name.localeCompare(b.name));
+    _persistLibrary();
+    _refreshAfterLibraryMutation();
+    showToast(collision ? `Merged into existing ${newName}` : `Changed to ${newName}`);
+    recordUndo(`rename ${oldName} → ${newName}`, () => {
+        STATE.library.length = 0;
+        for (const c of snapshot) STATE.library.push(c);
+        _persistLibrary(); _refreshAfterLibraryMutation();
     });
 }
 

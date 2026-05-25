@@ -106,6 +106,16 @@ export function createLibraryRow(card, callbacks = {}) {
         variant: 'onyx',
         onChange: (v) => callbacks.onChangeOnyx && callbacks.onChangeOnyx(v),
     }));
+    const changeBtn = document.createElement('button');
+    changeBtn.type = 'button';
+    changeBtn.className = 'lib-row__change-card';
+    changeBtn.textContent = '🔄 Change card';
+    changeBtn.title = 'Replace this entry with a different card (preserves level / fused / onyx / qty)';
+    changeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (callbacks.onChangeCard) callbacks.onChangeCard();
+    });
+    panel.appendChild(changeBtn);
     root.appendChild(panel);
 
     nameArea.addEventListener('click', (e) => {
