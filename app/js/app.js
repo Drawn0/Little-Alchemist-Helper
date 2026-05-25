@@ -16,6 +16,7 @@ import { createLibrarySearch } from './components/library_search.js';
 import { createCardThumbnail } from './components/card_thumbnail.js';
 import { loadPackData } from './util/pack_data.js';
 import { initPackPicker, openPackPicker } from './components/pack_picker.js';
+import { initImportModal, openImportModal, applyImportedLibrary } from './components/import_modal.js';
 
 // Phase 2: in-session memory for "Recently Added" section (newest first).
 const _recentlyAdded = [];
@@ -270,6 +271,26 @@ function _bindEvents() {
     document.getElementById('btn-lib-add-pack').addEventListener('click', () => {
         openPackPicker({ onCommit: _bulkAddFromPack });
     });
+    document.getElementById('btn-lib-import-xls').addEventListener('click', () => {
+        openImportModal({
+            getLibrary: () => STATE.library,
+            applyToLibrary: (entries, strategy) => {
+                const before = STATE.library.map((c) => ({ ...c }));
+                const result = applyImportedLibrary(STATE.library, entries, strategy, STATE.comboNameToId);
+                STATE.library.sort((a, b) => a.name.localeCompare(b.name));
+                _persistLibrary();
+                _refreshAfterLibraryMutation();
+                recordUndo('xlsm import', () => {
+                    STATE.library.length = 0;
+                    for (const c of before) STATE.library.push(c);
+                    _persistLibrary();
+                    _refreshAfterLibraryMutation();
+                });
+                return result;
+            },
+            onComplete: (r) => showToast(`Imported: +${r.added} new, ${r.merged} merged, ${r.skipped} skipped`),
+        });
+    });
     // Outside-click collapses any expanded row
     document.addEventListener('click', (e) => {
         if (e.target.closest('.lib-row')) return;
@@ -497,6 +518,7 @@ async function _enterApp() {
     await Promise.all([loadCardData(), loadPackData()]);
     _initLibraryUI();
     initPackPicker({ openModal: _openModal, closeModal: _closeModal });
+    initImportModal({ openModal: _openModal, closeModal: _closeModal });
     _refreshAll();
     setStatus('Loaded ' + Object.keys(STATE.comboDict).length.toLocaleString() + ' combinations  |  ' + STATE.library.length + ' cards in library');
 }

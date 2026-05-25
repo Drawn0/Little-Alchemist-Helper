@@ -44,6 +44,7 @@
                     <div id="lib-search-results" hidden></div>
                 </div>
                 <button id="btn-lib-add-pack" title="Add cards from a pack">+ Pack</button>
+                <button id="btn-lib-import-xls" title="Import library from an Andersam .xlsm/.xlsx spreadsheet">⬆ Import</button>
             </div>
             <div id="lib-search-filters"></div>
             <div class="lib-filterbar">
@@ -336,6 +337,16 @@
     </div>
     <div class="modal-body" id="pack-body"></div>
     <div class="modal-footer" id="pack-footer"></div>
+</div>
+
+<!-- ── Andersam spreadsheet import modal (Phase 2c-bis) ──────────────────── -->
+<div class="modal modal--import" id="modal-import">
+    <div class="modal-header">
+        <h2 id="import-title">Import from Spreadsheet</h2>
+        <button class="modal-close" data-close="modal-import">✕</button>
+    </div>
+    <div class="modal-body" id="import-body"></div>
+    <div class="modal-footer" id="import-footer"></div>
 </div>
 
 <!-- ── Toast notification (legacy vladajankovic – kept) ──────────────────── -->
