@@ -39,7 +39,7 @@ export function openChangeCardModal({ currentCard, onPick }) {
     }
 
     const title = document.getElementById('change-card-title');
-    title.textContent = `Change card (was ${currentCard.name}${currentCard.onyx ? ' ◊' : ''})`;
+    title.textContent = `Change card (was ${currentCard.name}${currentCard.onyx ? ' (Onyx)' : ''})`;
 
     const body = document.getElementById('change-card-body');
     body.innerHTML = '';

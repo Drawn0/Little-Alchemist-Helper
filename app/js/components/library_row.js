@@ -41,7 +41,7 @@ export function createLibraryRow(card, callbacks = {}) {
     nameBlock.className = 'lib-row__name-block';
     const nameText = document.createElement('span');
     nameText.className = 'lib-row__name-text';
-    nameText.textContent = card.name + (card.onyx ? ' ◊' : '');
+    nameText.textContent = card.name + (card.onyx ? ' (Onyx)' : '');
     nameBlock.appendChild(nameText);
     if (info.base_attack != null || info.base_defense != null) {
         const stats = document.createElement('span');
