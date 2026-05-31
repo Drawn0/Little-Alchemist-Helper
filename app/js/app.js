@@ -18,6 +18,7 @@ import { loadPackData } from './util/pack_data.js';
 import { initPackPicker, openPackPicker } from './components/pack_picker.js';
 import { initImportModal, openImportModal, applyImportedLibrary } from './components/import_modal.js';
 import { initChangeCardModal, openChangeCardModal } from './components/change_card_modal.js';
+import { buildDeckXlsx } from './services/deck_export.js';
 
 // Phase 2: in-session memory for "Recently Added" section (newest first).
 const _recentlyAdded = [];
@@ -424,6 +425,7 @@ function _bindEvents() {
     document.getElementById('btn-best-possible').addEventListener('click', () => _runAlgorithm('best'));
     document.getElementById('btn-to-leaderboard').addEventListener('click', _copyToLeaderboard);
     document.getElementById('btn-export-deck').addEventListener('click', _exportDeck);
+    document.getElementById('btn-export-deck-xlsx').addEventListener('click', _exportDeckXlsx);
     document.getElementById('btn-clear-deck').addEventListener('click', () => {
         _confirm('Clear Deck', 'Clear all cards from the deck?', () => {
             STATE.deck = [];
@@ -1847,6 +1849,23 @@ function _importLeaderboard(e) {
 }
 
 // ── Export deck ───────────────────────────────────────────────────────────────
+
+function _exportDeckXlsx() {
+    if (!STATE.deck.length) { _toast('Deck is empty.'); return; }
+    const score = totalDeckScore(STATE.comboDict, STATE.deck.map(c => _cardKey(c)), STATE.library, STATE.settings);
+    const blob = buildDeckXlsx(STATE.deck, {
+        deckName: 'LAR Helper Deck',
+        score,
+        targetSize: STATE.settings.n_cards,
+    });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `lar-deck-${ts}.xlsx`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${filename}`);
+}
 
 function _exportDeck() {
     if (!STATE.deck.length) { _toast('Deck is empty.'); return; }
